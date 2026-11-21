@@ -5224,3 +5224,25 @@
         lg.addEventListener("load", function () { lg.hidden = false; });
     } catch (e) {}
 }();
+
+// أيقونات أزرار التحديث: نغيّرها هون (بدل index.html) عشان تنتشر لكل النسخ عن طريق
+// التحديث البعيد نفسه بدون الحاجة لإرسال زيب جديد.
+!function () {
+    try {
+        var c = document.getElementById("upd-check");
+        if (c) c.textContent = "☁️ تحقق من تحديث";
+        var g = document.getElementById("upd-go");
+        if (g) g.textContent = "☁️⬇ ثبّت التحديث";
+    } catch (e) {}
+}();
+
+// اسم اللوحة بنسخة كيمو: نكتشفها من وجود #brand-logo (موجود بس بنسخة كيمو) ونغيّر
+// العنوان الظاهر هون عن طريق JS (ملف مشترك) بدل index.html (ملف محلي ما بيتحدث)،
+// عشان تغيير الاسم ينتشر تلقائياً لكل نسخ كيمو المركّبة عن طريق التحديث البعيد.
+!function () {
+    try {
+        if (!document.getElementById("brand-logo")) return; // مش نسخة كيمو
+        var h1 = document.querySelector("header h1");
+        if (h1) h1.textContent = "منشئ الخام";
+    } catch (e) {}
+}();
