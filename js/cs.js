@@ -20,6 +20,12 @@ CSInterface.prototype.getSystemPath = function(pathType) {
         if (obj && obj.path) path = obj.path;
     } catch (e) { /* raw أصلاً مسار نصي عادي مش JSON — نستخدمه زي ما هو */ }
     try { path = decodeURI(path); } catch (e2) {}
+    // المسار بيجي أحياناً كـ file:// URI (مثلاً file:///Library/Application Support/...)
+    // ولازم نشيل الـ scheme عشان fs.readFileSync/writeFileSync تقدر تفتحه كمسار عادي.
+    if (/^file:\/\//i.test(path)) {
+        path = path.replace(/^file:\/\//i, "");
+        if (/^\/[a-zA-Z]:/.test(path)) path = path.slice(1); // ويندوز: /C:/... -> C:/...
+    }
     if (!path || typeof path !== "string") throw new Error("مسار غير صالح: " + raw);
     return path;
 };
