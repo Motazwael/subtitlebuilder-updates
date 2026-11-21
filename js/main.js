@@ -3305,6 +3305,10 @@
                 green: {
                     a: "#2fbf7a",
                     o: "#06160d"
+                },
+                purple: {
+                    a: "#9b6bf2",
+                    o: "#140c22"
                 }
             };
             var applyTheme = function(name) {
@@ -3316,8 +3320,20 @@
                     b.classList.toggle("on", b.getAttribute("data-theme") === name)
                 })
             };
-            applyTheme(p("sb.theme", "orange"));
+            // نبني أزرار الألوان ديناميكياً من THEMES (ملف مشترك يتحدّث عن بعد) بدل ما
+            // تضل ثابتة بـ index.html (ملف محلي ما بيتحدث) — هيك أي لون نضيفه هون بالمستقبل
+            // بينتشر تلقائياً لكل النسخ المركّبة بمجرد ما يضغطوا "تحقق من تحديث"، بدون
+            // الحاجة لتوزيع زيب جديد.
             var themeRow = document.getElementById("theme-row");
+            if (themeRow) {
+                themeRow.innerHTML = "";
+                Object.keys(THEMES).forEach(function(name) {
+                    var b = document.createElement("button");
+                    b.type = "button", b.className = "swatch", b.setAttribute("data-theme", name), b.style.background = THEMES[name].a;
+                    themeRow.appendChild(b)
+                })
+            }
+            applyTheme(p("sb.theme", "orange"));
             themeRow && themeRow.addEventListener("click", function(e) {
                 var b = e.target.closest ? e.target.closest(".swatch") : null;
                 if (b) {
