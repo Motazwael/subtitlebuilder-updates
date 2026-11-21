@@ -465,7 +465,10 @@ function sb_placeAll(items, trackNum, opts) {
           ti = seq.importMGT(new File(it.path).fsName, ticks, vt, 0);
         }
         if (!ti) { r.error = 'importMGT returned nothing.'; results.push(r); continue; }
-        try {
+        // it.end == null means "keep the template's own default/native duration" (e.g. a reporter-name
+        // lower third that should just start at a given point and run its own built-in length) instead of
+        // stretching/trimming it to a computed end time the way the title/source overlays do.
+        if (it.end != null) try {
           var t = new Time();
           t.ticks = String(Math.round((zero + it.end) * SB_TICKS));
           ti.end = t;

@@ -53,7 +53,13 @@
     }
 
     function a(e) {
-        if (!(e = String(e).trim().replace(",", "."))) return null;
+        if (!(e = String(e).trim())) return null;
+        // "01.35" with no ":" and a 2-digit fraction is how this team often types mm.ss ranges using a dot
+        // instead of a colon (e.g. "00.00 - 01.35" meaning 0:00 to 1:35) — treat it as minutes:seconds, not
+        // a decimal fraction of a second, or a 1:35 cut silently becomes a 1.35-second one.
+        var mmss = /^(\d{1,3})[.,](\d{2})$/.exec(e);
+        if (mmss && Number(mmss[2]) < 60) return 60 * Number(mmss[1]) + Number(mmss[2]);
+        e = e.replace(",", ".");
         var t = e.split(":").map(Number);
         return t.some(isNaN) ? null : 3 === t.length ? 3600 * t[0] + 60 * t[1] + t[2] : 2 === t.length ? 60 * t[0] + t[1] : t[0]
     }

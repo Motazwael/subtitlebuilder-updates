@@ -3614,6 +3614,14 @@
         return -1
     }
 
+    // موقرت "AJ - Name Reporter" من مكتبة الموقرتات المضافة (مجلدات Motion Graphics Templates) — نلاقيه بالاسم
+    // لأنه مو جزء من حقول القالب العادية (عنوان/مصدر/موقع)، واسمه ثابت وما يحتاج اختياره من قائمة.
+    function findReporterTpl() {
+        return l.filter(function(t) {
+            return /^AJ\s*-\s*Name\s*Reporter$/i.test(String(t.name || "").trim())
+        })[0] || null
+    }
+
     function we(t, a) {
         var i = String(t).trim().toLowerCase() + ".mogrt",
             o = [],
@@ -3725,7 +3733,7 @@
             var idx = grp.idx,
                 e = ne.clips[idx[0]],
                 a = document.createElement("div");
-            a.className = "rawcard", a.innerHTML = '<div class="rc-h"><b>الفيديو</b><span class="sp"></span><button class="link rc-pick">ملف من الجهاز</button><button class="link rc-del">مسح</button></div><textarea class="rc-t" dir="auto" rows="2" placeholder="العنوان الرئيسي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv pt"></div><textarea class="rc-s" dir="auto" rows="2" placeholder="العنوان الفرعي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv ps"></div><input type="text" class="rc-url" placeholder="رابط الفيديو (فيسبوك، تيليغرام، إنستغرام، X ...)"><div class="rc-r"><input type="text" class="rc-src" dir="auto" placeholder="المصدر (اسم القناة)"><input type="text" class="rc-loc" dir="auto" placeholder="الموقع"></div><div class="rc-times"></div><button class="link rc-rangeadd" type="button">+ إضافة توقيت من نفس الفيديو</button><div class="rc-st"></div>';
+            a.className = "rawcard", a.innerHTML = '<div class="rc-h"><b>الفيديو</b><span class="sp"></span><button class="link rc-pick">ملف من الجهاز</button><button class="link rc-del">مسح</button></div><textarea class="rc-t" dir="auto" rows="2" placeholder="العنوان الرئيسي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv pt"></div><textarea class="rc-s" dir="auto" rows="2" placeholder="العنوان الفرعي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv ps"></div><input type="text" class="rc-url" placeholder="رابط الفيديو (فيسبوك، تيليغرام، إنستغرام، X ...)"><div class="rc-r"><input type="text" class="rc-src" dir="auto" placeholder="المصدر (اسم القناة)"><input type="text" class="rc-loc" dir="auto" placeholder="الموقع"></div><label class="rc-rep-row"><input type="checkbox" class="rc-rep"> 📻 أضف Name Reporter (الصوت من المصدر الأصلي)</label><div class="rc-times"></div><button class="link rc-rangeadd" type="button">+ إضافة توقيت من نفس الفيديو</button><div class="rc-st"></div>';
             var q = function(t) {
                 return a.querySelector(t)
             };
@@ -3747,6 +3755,8 @@
                 setAll("source", this.value)
             }, q(".rc-loc").oninput = function() {
                 setAll("location", this.value)
+            }, q(".rc-rep").checked = !!e.rep, q(".rc-rep").onchange = function() {
+                setAll("rep", this.checked)
             }, q(".rc-url").oninput = function() {
                 setAll("url", this.value.trim())
             }, q(".rc-del").onclick = function() {
@@ -3793,7 +3803,11 @@
                 to: t.to,
                 file: "",
                 source: t.source || le(t.url) || "",
-                location: t.location || ""
+                location: t.location || "",
+                notes: t.notes || "",
+                // "الصوت من المصدر الأصلي" بالملاحظات = نضيف موقرت "AJ - Name Reporter" تلقائياً؛
+                // صندوق البطاقة بيخلي المحرر يفعّلها يدوياً لو نسي يكتبها بالسكربت.
+                rep: /الصوت\s*من\s*المصدر\s*الأصلي/.test(t.notes || "")
             }
         }), re(), ke(), i("raw-state") && (i("raw-state").textContent = ne.clips.length ? "وجدت " + ne.clips.length + " فيديو. راجع البطاقات وعدّلها." : "لم أجد فيديو. أضف بطاقة يدوياً.")) : f("وحدة الخام غير محمّلة.", "e")
     }
@@ -4140,6 +4154,11 @@
                             })
                         }), et++)
                     };
+                var repTpl = findReporterTpl(), repWarned = !1, repOffset = 5 + 1 / 25;
+                try {
+                    var repInfo = await m("sb_info");
+                    repInfo && repInfo.ok && repInfo.fps > 0 && (repOffset = 5 + 1 / repInfo.fps)
+                } catch (teRep) {}
                 for (var at in I.results.forEach(function(t, e) {
                         if (t.ok) {
                             (t.log || []).forEach(function(t) {
@@ -4153,7 +4172,7 @@
                                 s = me(n.subtitle, d("raw-mxs", 20)),
                                 c = ae(n.location),
                                 l = ae(n.source) || le(n.url);
-                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
+                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l)), n.rep && (repTpl ? rt(10, repTpl, r + repOffset, void 0, []) : repWarned || (repWarned = !0, f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w")))
                         } else f("فيديو " + (e + 1) + ": " + (t.error || "فشل"), "e")
                     }), tt)
                     if (tt.hasOwnProperty(at)) {
@@ -4306,7 +4325,7 @@
             // بالقائمة أحمر. قراءة أسماء الخيارات من ملف الموقرت مش موثوقة دايماً لموقرت موجود فعلاً على
             // السيكونس (نفس القيد الموجود أصلاً بخيار "رقم خيار اللون الأزرق" اليدوي بوضع الخام العادي)، فبجرّب
             // أقرأها تلقائياً أولاً، وإذا فشلت بستخدم رقم الخيار مباشرة (افتراضياً ٠ كما أكدت، وقابل للتغيير).
-            var titleNames = ["AJ - RAW Title 1", "AJ - Title 2 RAW"],
+            var titleNames = ["AJ - RAW Title 1", "AJ - Title 2 RAW", "AJ - Name Reporter"],
                 redIdxDefault = d("raw-red", 0),
                 fr1 = await m("sb_findClipsByName", titleNames);
             if (fr1 && fr1.ok)

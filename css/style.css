@@ -184,6 +184,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .rawcard .rc-r label { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--muted); }
 .rawcard .rc-r input { width:74px; direction:ltr; text-align:center; }
 .rawcard .rc-url { direction:ltr; text-align:left; }
+.rawcard .rc-rep-row { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); margin:6px 0 2px; cursor:pointer; user-select:none; }
+.rawcard .rc-rep-row input[type=checkbox] { margin:0; }
 .rawcard .rc-st { font-size:11px; margin-top:4px; }
 .rawcard .rc-st.ok { color:var(--ok,#4cd08b); } .rawcard .rc-st.e { color:#ff8a80; }
 #raw-text { width:100%; box-sizing:border-box; padding:8px; font:inherit; font-size:13px; color:#fff; background:var(--card2); border:1px solid var(--line); border-radius:10px; }
