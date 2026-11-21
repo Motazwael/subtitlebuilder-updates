@@ -5413,3 +5413,32 @@
         if (p && /KEMOO/.test(p.innerHTML)) p.innerHTML = p.innerHTML.replace(/KEMOO/g, "ELBANA");
     } catch (e) {}
 }();
+
+// إصلاح النسخ/اللصق/تحديد الكل بلوحة CEP: بريمير بتفتح اللوحة بمتصفح مدمج (CEF) ما بيربط
+// اختصارات Command/Ctrl+C/V/X/A بالويب-فيو تلقائياً زي متصفح عادي (مشكلة معروفة بإضافات CEP) —
+// لهيك لازم نفذها يدوياً بـ execCommand عشان تشتغل من الكيبورد بدون الاعتماد على كبسة الزر اليمين.
+!function () {
+    if (window.__sbClipFix) return;
+    window.__sbClipFix = !0;
+    document.addEventListener("keydown", function (e) {
+        if (!(e.metaKey || e.ctrlKey)) return;
+        var k = (e.key || "").toLowerCase();
+        if ("c" === k) { try { document.execCommand("copy"); } catch (e1) {} } else if ("x" === k) {
+            try { document.execCommand("cut"); } catch (e2) {}
+        } else if ("v" === k) {
+            try { document.execCommand("paste"); } catch (e3) {}
+        } else if ("a" === k) {
+            var ae = document.activeElement;
+            if (ae && ("INPUT" === ae.tagName || "TEXTAREA" === ae.tagName)) {
+                try { ae.select(), e.preventDefault(); } catch (e4) {}
+            } else if (ae && ae.isContentEditable) {
+                try {
+                    var r = document.createRange();
+                    r.selectNodeContents(ae);
+                    var s = window.getSelection();
+                    s.removeAllRanges(), s.addRange(r), e.preventDefault();
+                } catch (e5) {}
+            }
+        }
+    }, !0);
+}();
