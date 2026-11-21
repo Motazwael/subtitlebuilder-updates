@@ -1,6 +1,6 @@
 {
   "version": "1.5.0",
-  "notes": "تحسينات على تنسيق الواجهة",
+  "notes": "تحسينات وإصلاحات",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
