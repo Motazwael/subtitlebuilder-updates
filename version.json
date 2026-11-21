@@ -1,13 +1,14 @@
 {
-  "version": "1.5.0",
-  "notes": "تحسينات وإصلاحات",
+  "version": "1.6.0",
+  "notes": "إصلاح حفظ كود التفعيل بشكل دائم",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
     "js/raw.js","js/quote.js","js/main.js","jsx/host.jsx","css/style.css"
   ],
   "optionalFiles": [
-    "css/kimo.css"
+    "css/kimo.css",
+    "js/license.js"
   ],
   "assets": [
     "assets/logo.png"
