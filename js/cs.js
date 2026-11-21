@@ -7,9 +7,19 @@ CSInterface.prototype.evalScript = function(e, n) {
 // من استدعاء دالة jsx عبر evalScript، ومش عرضة لمشاكل تحميل/تخزين مؤقت لملفات الـ jsx.
 var SystemPath = { EXTENSION: "extension" };
 CSInterface.prototype.getSystemPath = function(pathType) {
+    // بعض إصدارات CEP بترجع مسار نصي مباشر، وبعضها بيرجع JSON فيها path — نتعامل
+    // مع الحالتين، ونرمي الخطأ الحقيقي (بدل ما نبلعه) عشان يظهر بالتشخيص لو فشل.
+    if (!window.__adobe_cep__ || !window.__adobe_cep__.getSystemPath) {
+        throw new Error("__adobe_cep__.getSystemPath غير متوفر");
+    }
+    var raw = window.__adobe_cep__.getSystemPath(pathType);
+    if (raw == null) throw new Error("getSystemPath رجّع قيمة فاضية");
+    var path = raw;
     try {
-        var raw = window.__adobe_cep__.getSystemPath(pathType);
         var obj = JSON.parse(raw);
-        return obj && obj.path ? decodeURI(obj.path) : null;
-    } catch (e) { return null; }
+        if (obj && obj.path) path = obj.path;
+    } catch (e) { /* raw أصلاً مسار نصي عادي مش JSON — نستخدمه زي ما هو */ }
+    try { path = decodeURI(path); } catch (e2) {}
+    if (!path || typeof path !== "string") throw new Error("مسار غير صالح: " + raw);
+    return path;
 };
