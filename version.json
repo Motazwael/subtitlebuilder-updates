@@ -1,5 +1,5 @@
 {
-  "version": "1.7.2",
+  "version": "1.7.3",
   "notes": "تحسينات وحماية وأزرار جديدة",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
