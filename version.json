@@ -1,6 +1,6 @@
 {
   "version": "1.5.0",
-  "notes": "توحيد حجم أزرار البناء + فصل زر «نسخة الآن» كإجراء خاص",
+  "notes": "أزرار أجمل وأنظف ✨",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
