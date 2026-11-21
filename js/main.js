@@ -3875,6 +3875,52 @@
         }
     }();
 
+    // زر "أضف Name Reporter عند المؤشر" لوضع الخام: يحط الموقرت مباشرة عند موضع المؤشر
+    // بنفس السيكونس المفتوح حالياً، بدون إعادة بناء الخام من الصفر — لحالة نسيان كتابة
+    // "الصوت من المصدر الأصلي" بالملاحظات وقت البناء، أو أي إضافة يدوية لاحقة.
+    !function() {
+        var actionsDiv = document.querySelector("#raw-st1 .actions");
+        if (!actionsDiv || document.getElementById("raw-rep-now")) return;
+        var btn = document.createElement("button");
+        btn.type = "button", btn.id = "raw-rep-now", btn.className = "link", btn.textContent = "📻 أضف Name Reporter عند المؤشر";
+        actionsDiv.appendChild(btn);
+        btn.onclick = async function() {
+            btn.disabled = !0;
+            try {
+                var repTpl = findReporterTpl();
+                if (!repTpl) return void f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
+                var info = await m("sb_info");
+                if (!info || !info.ok) return void f(info && info.error || "افتح سيكونس أولاً.", "w");
+                var vtrack = Math.max(1, Math.round(d("raw-vtrack", 1))),
+                    clip = await m("sb_clipAt", vtrack, info.playhead - info.zero);
+                if (!clip || !clip.ok) return void f(clip && clip.error || "حط المؤشر فوق/بعد الفيديو المطلوب على V" + vtrack + " أولاً.", "w");
+                var repOffset = 5 + 1 / 25;
+                info.fps > 0 && (repOffset = 5 + 1 / info.fps);
+                var queue = [{
+                        path: repTpl.file,
+                        label: _(repTpl),
+                        mname: repTpl.name,
+                        name: repTpl.name,
+                        start: clip.start + repOffset,
+                        lines: [],
+                        menus: A(repTpl, 1),
+                        menuNames: repTpl.menus.map(function(t) {
+                            return t.label
+                        }),
+                        textNames: repTpl.texts.map(function(t) {
+                            return t.label
+                        })
+                    }],
+                    pr = await m("sb_placeAll", queue, 10);
+                pr && pr.ok ? (pr.results || []).forEach(function(t) {
+                    f("Name Reporter: " + (t.ok ? "نزل على V10 عند 00:00:05:01 من بداية الفيديو" : t.error || "فشل"), t.ok ? "ok" : "e")
+                }) : f("تعذّر إضافة Name Reporter: " + (pr && pr.error || "غير معروف"), "e")
+            } finally {
+                btn.disabled = !1
+            }
+        }
+    }();
+
     // إعادة ترتيب أزرار "ابنِ/حدّث النصوص/اختبر التنزيل" و"نسخة الآن الحمراء" بالـ JS
     // (بدل index.html) عشان توحيد الشكل والتجميع المنطقي ينتشر لكل النسخ عن طريق
     // التحديث البعيد: صف البناء أزراره متساوية بالحجم، وصف "نسخة الآن" منفصل بصرياً

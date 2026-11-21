@@ -438,6 +438,30 @@ function _sbFindClip(trk, startSec, zero) {
   }
   return null;
 }
+// يرجّع بداية/نهاية كليب الفيديو (من صفر السيكونس) على تراك معيّن اللي يغطي موضع معطى، أو أقرب كليب
+// قبله لو ما في كليب يغطيه بالضبط — تستخدمها أزرار الإضافة اليدوية عشان تحسب بداية الفيديو الحقيقي
+// (مو موضع المؤشر حرفياً) ليطبّقوا عليه نفس قاعدة "بداية الفيديو + كذا ثانية" المستخدمة وقت البناء.
+function sb_clipAt(trackNum, atSec) {
+  try {
+    var seq = app.project.activeSequence;
+    if (!seq) return _sbJson({ ok: false, error: 'No active sequence.' });
+    var zero = _sbZero(seq), vt = Math.max(0, Number(trackNum) - 1);
+    var trk = seq.videoTracks[vt];
+    if (!trk) return _sbJson({ ok: false, error: 'invalid track' });
+    var at = zero + Number(atSec), best = null, i, c;
+    for (i = 0; i < trk.clips.numItems; i++) {
+      c = trk.clips[i];
+      if (c.start.seconds <= at && c.end.seconds > at) { best = c; break; }
+    }
+    if (!best) for (i = 0; i < trk.clips.numItems; i++) {
+      c = trk.clips[i];
+      if (c.start.seconds <= at && (!best || c.start.seconds > best.start.seconds)) best = c;
+    }
+    if (!best) return _sbJson({ ok: false, error: 'لا يوجد فيديو على V' + (vt + 1) + ' عند أو قبل موضع المؤشر.' });
+    return _sbJson({ ok: true, start: best.start.seconds - zero, end: best.end.seconds - zero });
+  } catch (e) { return _sbJson({ ok: false, error: String(e) }); }
+}
+
 // opts (optional): { sync: true, stale: [startSeconds...] }  -> update clips already on the track instead of importing again
 function sb_placeAll(items, trackNum, opts) {
   try {
