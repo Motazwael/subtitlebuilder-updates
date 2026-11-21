@@ -5197,3 +5197,14 @@
         })
     })()
 }();
+// شعار الزاوية: لو موجود عنصر #brand-logo (نسخة كيمو) وصار ملف الشعار متوفر على القرص
+// (سواء من الزيب نفسه أو جالك بتحديث لاحق)، نظهره تلقائياً حتى لو العنصر معمول له hidden
+// بالـ index.html من نسخة قديمة — بهيك ما في داعي نحدّث index.html نفسه أبداً.
+!function () {
+    try {
+        var lg = document.getElementById("brand-logo");
+        if (!lg) return;
+        if (lg.complete && lg.naturalWidth > 0) { lg.hidden = false; return; }
+        lg.addEventListener("load", function () { lg.hidden = false; });
+    } catch (e) {}
+}();
