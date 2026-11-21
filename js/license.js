@@ -14,7 +14,7 @@
             var ov = document.createElement("div");
             ov.id = "lic-block";
             ov.style.cssText = "position:fixed;inset:0;background:#0b0b0d;color:#eee;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;direction:rtl;text-align:center;font-family:inherit";
-            ov.innerHTML = '<h2 style="margin:0 0 6px">نسخة خاصة — KEMOO</h2><p style="max-width:320px">' + msg + "</p>";
+            ov.innerHTML = '<h2 style="margin:0 0 6px">نسخة خاصة — ELBANA</h2><p style="max-width:320px">' + msg + "</p>";
             document.body.appendChild(ov)
         }
         document.body ? render() : document.addEventListener("DOMContentLoaded", render)
@@ -107,7 +107,7 @@
         ov.id = "lic-gate";
         ov.style.cssText = "position:fixed;inset:0;background:#0b0b0d;color:#eee;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;direction:rtl;text-align:center;font-family:inherit";
         ov.innerHTML =
-            '<h2 style="margin:0 0 6px">نسخة خاصة — KEMOO</h2>' +
+            '<h2 style="margin:0 0 6px">نسخة خاصة — ELBANA</h2>' +
             '<p class="muted" style="max-width:300px;margin:0 0 10px">هالجهاز محتاج رمز تفعيل. ابعت الكود التالي للمطوّر:</p>' +
             '<div id="lic-id" style="font-family:monospace;font-size:18px;letter-spacing:1px;background:#1a1a1d;padding:10px 16px;border-radius:8px;margin-bottom:14px;direction:ltr">' + fmtGroups(id) + "</div>" +
             '<input id="lic-input" type="text" placeholder="رمز التفعيل" dir="ltr" style="text-align:center;font-family:monospace;font-size:16px;padding:8px;border-radius:6px;border:1px solid #444;background:#111;color:#eee;width:220px;margin-bottom:10px;box-sizing:border-box">' +

@@ -5354,6 +5354,15 @@
     try {
         if (!document.getElementById("brand-logo")) return; // مش نسخة كيمو
         var h1 = document.querySelector("header h1");
-        if (h1) h1.textContent = "ELBANA";
+        if (h1) h1.textContent = "منشئ الخام";
+    } catch (e) {}
+}();
+
+// استبدال اسم "KEMOO" بـ "ELBANA" بسطر المؤلف تحت الشعار — index.html نفسه ما بيتحدث، فبنعدّلها
+// بالـ JS (ملف مشترك) عشان تنتشر تلقائياً لكل نسخ كيمو المركّبة عن طريق التحديث البعيد.
+!function () {
+    try {
+        var p = document.querySelector(".author");
+        if (p && /KEMOO/.test(p.innerHTML)) p.innerHTML = p.innerHTML.replace(/KEMOO/g, "ELBANA");
     } catch (e) {}
 }();
