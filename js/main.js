@@ -3879,12 +3879,12 @@
     // بنفس السيكونس المفتوح حالياً، بدون إعادة بناء الخام من الصفر — لحالة نسيان كتابة
     // "الصوت من المصدر الأصلي" بالملاحظات وقت البناء، أو أي إضافة يدوية لاحقة.
     !function() {
-        var buildBtn = i("raw-build"),
-            actionsDiv = buildBtn && buildBtn.closest(".actions");
+        var nowBtn = i("raw-now"),
+            actionsDiv = nowBtn && nowBtn.closest(".actions");
         if (!actionsDiv || document.getElementById("raw-rep-now")) return;
         var btn = document.createElement("button");
         btn.type = "button", btn.id = "raw-rep-now", btn.className = "pill", btn.textContent = "📻 أضف الصوت من المصدر الأصلي عند المؤشر";
-        actionsDiv.insertBefore(btn, i("raw-bstate"));
+        nowBtn.insertAdjacentElement("afterend", btn);
         btn.onclick = async function() {
             btn.disabled = !0;
             try {
