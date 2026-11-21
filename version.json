@@ -1,6 +1,6 @@
 {
-  "version": "1.7.6",
-  "notes": "زر Name Reporter اليدوي هلأ يحسب بداية الفيديو الحقيقي (+5 ثواني وفريم) بدل موضع المؤشر حرفياً",
+  "version": "1.7.7",
+  "notes": "تحسينات وإصلاحات",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",

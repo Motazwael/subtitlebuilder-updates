@@ -3637,7 +3637,7 @@
         });
         if (!items.length) return;
         var repTpl = findReporterTpl();
-        if (!repTpl) return void f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
+        if (!repTpl) return void f('لم أجد موقرت "الصوت من المصدر الأصلي" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
         var repOffset = 5 + 1 / 25;
         try {
             var info = await m("sb_info");
@@ -3661,8 +3661,8 @@
             }
         }), pr = await m("sb_placeAll", queue, 10);
         pr && pr.ok ? (pr.results || []).forEach(function(t) {
-            f("Name Reporter: " + (t.ok ? "نزلت على V10" : t.error || "فشل"), t.ok ? "ok" : "e")
-        }) : f("تعذّر إضافة Name Reporter: " + (pr && pr.error || "غير معروف"), "e")
+            f("الصوت من المصدر الأصلي: " + (t.ok ? "نزلت على V10" : t.error || "فشل"), t.ok ? "ok" : "e")
+        }) : f("تعذّر إضافة الصوت من المصدر الأصلي: " + (pr && pr.error || "غير معروف"), "e")
     }
 
     function we(t, a) {
@@ -3776,7 +3776,7 @@
             var idx = grp.idx,
                 e = ne.clips[idx[0]],
                 a = document.createElement("div");
-            a.className = "rawcard", a.innerHTML = '<div class="rc-h"><b>الفيديو</b><span class="sp"></span><button class="link rc-pick">ملف من الجهاز</button><button class="link rc-del">مسح</button></div><textarea class="rc-t" dir="auto" rows="2" placeholder="العنوان الرئيسي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv pt"></div><textarea class="rc-s" dir="auto" rows="2" placeholder="العنوان الفرعي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv ps"></div><input type="text" class="rc-url" placeholder="رابط الفيديو (فيسبوك، تيليغرام، إنستغرام، X ...)"><div class="rc-r"><input type="text" class="rc-src" dir="auto" placeholder="المصدر (اسم القناة)"><input type="text" class="rc-loc" dir="auto" placeholder="الموقع"></div><label class="rc-rep-row"><input type="checkbox" class="rc-rep"> 📻 أضف Name Reporter (الصوت من المصدر الأصلي)</label><div class="rc-times"></div><button class="link rc-rangeadd" type="button">+ إضافة توقيت من نفس الفيديو</button><div class="rc-st"></div>';
+            a.className = "rawcard", a.innerHTML = '<div class="rc-h"><b>الفيديو</b><span class="sp"></span><button class="link rc-pick">ملف من الجهاز</button><button class="link rc-del">مسح</button></div><textarea class="rc-t" dir="auto" rows="2" placeholder="العنوان الرئيسي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv pt"></div><textarea class="rc-s" dir="auto" rows="2" placeholder="العنوان الفرعي (Enter = سطر جديد بيدك، وإلا يُقسّم تلقائياً)"></textarea><div class="rc-pv ps"></div><input type="text" class="rc-url" placeholder="رابط الفيديو (فيسبوك، تيليغرام، إنستغرام، X ...)"><div class="rc-r"><input type="text" class="rc-src" dir="auto" placeholder="المصدر (اسم القناة)"><input type="text" class="rc-loc" dir="auto" placeholder="الموقع"></div><label class="rc-rep-row"><input type="checkbox" class="rc-rep"> 📻 أضف الصوت من المصدر الأصلي</label><div class="rc-times"></div><button class="link rc-rangeadd" type="button">+ إضافة توقيت من نفس الفيديو</button><div class="rc-st"></div>';
             var q = function(t) {
                 return a.querySelector(t)
             };
@@ -3882,13 +3882,13 @@
         var actionsDiv = document.querySelector("#raw-st1 .actions");
         if (!actionsDiv || document.getElementById("raw-rep-now")) return;
         var btn = document.createElement("button");
-        btn.type = "button", btn.id = "raw-rep-now", btn.className = "link", btn.textContent = "📻 أضف Name Reporter عند المؤشر";
+        btn.type = "button", btn.id = "raw-rep-now", btn.className = "link", btn.textContent = "📻 أضف الصوت من المصدر الأصلي عند المؤشر";
         actionsDiv.appendChild(btn);
         btn.onclick = async function() {
             btn.disabled = !0;
             try {
                 var repTpl = findReporterTpl();
-                if (!repTpl) return void f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
+                if (!repTpl) return void f('لم أجد موقرت "الصوت من المصدر الأصلي" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
                 var info = await m("sb_info");
                 if (!info || !info.ok) return void f(info && info.error || "افتح سيكونس أولاً.", "w");
                 var vtrack = Math.max(1, Math.round(d("raw-vtrack", 1))),
@@ -3913,8 +3913,8 @@
                     }],
                     pr = await m("sb_placeAll", queue, 10);
                 pr && pr.ok ? (pr.results || []).forEach(function(t) {
-                    f("Name Reporter: " + (t.ok ? "نزل على V10 عند 00:00:05:01 من بداية الفيديو" : t.error || "فشل"), t.ok ? "ok" : "e")
-                }) : f("تعذّر إضافة Name Reporter: " + (pr && pr.error || "غير معروف"), "e")
+                    f("الصوت من المصدر الأصلي: " + (t.ok ? "نزل على V10 عند 00:00:05:01 من بداية الفيديو" : t.error || "فشل"), t.ok ? "ok" : "e")
+                }) : f("تعذّر إضافة الصوت من المصدر الأصلي: " + (pr && pr.error || "غير معروف"), "e")
             } finally {
                 btn.disabled = !1
             }
