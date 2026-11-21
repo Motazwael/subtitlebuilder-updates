@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "notes": "النسخة الأولى",
+  "files": [
+    "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
+    "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
+    "js/raw.js","js/quote.js","js/main.js","jsx/host.jsx","css/style.css"
+  ]
+}
