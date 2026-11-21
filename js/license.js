@@ -31,19 +31,44 @@
     // غيّر هاد النص لأي شيء تحبه — بس خليه نفسه بالضبط بملف generate_serial.js المرفق
     var SECRET = "Kimo-SubtitleBuilder-2026";
 
+    // بصمة ثابتة فعلياً: UUID النظام نفسه (ثابت مهما تغيّرت الشبكة/VPN/محولات وهمية)،
+    // بدل الاعتماد القديم على أول MAC address — كان بيتغيّر كل ما يتصل/ينفصل VPN أو
+    // يظهر محول شبكة وهمي (utun, AnyDesk, إلخ) فيغيّر ترتيب الفرز ويطلع بصمة مختلفة.
+    function stableSystemId() {
+        try {
+            var execSync = require("child_process").execSync;
+            if (os.platform() === "darwin") {
+                var out = execSync('ioreg -rd1 -c IOPlatformExpertDevice', { encoding: "utf8" });
+                var m = /"IOPlatformUUID"\s*=\s*"([^"]+)"/.exec(out);
+                if (m) return m[1];
+            } else if (os.platform() === "win32") {
+                var out2 = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', { encoding: "utf8" });
+                var m2 = /MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]+)/.exec(out2);
+                if (m2) return m2[1];
+            }
+        } catch (e) {}
+        return "";
+    }
+
     function machineId() {
-        var nets = {};
-        try { nets = os.networkInterfaces() || {}; } catch (e) {}
-        var mac = "";
-        Object.keys(nets).sort().some(function (name) {
-            return (nets[name] || []).some(function (ni) {
-                if (ni && ni.mac && ni.mac !== "00:00:00:00:00:00" && !ni.internal) {
-                    return mac = ni.mac, !0
-                }
-                return !1
-            })
-        });
-        var raw = [os.hostname(), mac, os.platform(), os.arch()].join("|");
+        var stable = stableSystemId(), raw;
+        if (stable) {
+            raw = [stable, os.platform(), os.arch()].join("|");
+        } else {
+            // احتياط فقط لو تعذّر جلب UUID النظام (نادر): نرجع لطريقة MAC القديمة.
+            var nets = {};
+            try { nets = os.networkInterfaces() || {}; } catch (e) {}
+            var mac = "";
+            Object.keys(nets).sort().some(function (name) {
+                return (nets[name] || []).some(function (ni) {
+                    if (ni && ni.mac && ni.mac !== "00:00:00:00:00:00" && !ni.internal) {
+                        return mac = ni.mac, !0
+                    }
+                    return !1
+                })
+            });
+            raw = [os.hostname(), mac, os.platform(), os.arch()].join("|");
+        }
         return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 16).toUpperCase()
     }
 
