@@ -313,8 +313,14 @@ function _sbFill(comp, lines, menus, names, textNames) {
     if (!isTxt && textNames && textNames.length) { for (var tq = 0; tq < textNames.length; tq++) if (textNames[tq] === dn) { tnIdx = tq; break; } }
     if (isTxt || tnIdx >= 0) {
       if (textPos < lines.length) {
-        var got = '';
-        try { got = _sbSetAny(p, lines[textPos]); } catch (e1) { got = 'ERROR: ' + e1; }
+        // نفس الاحتياط الموجود بـ sb_fillRaw: إعادة محاولة الكتابة لو ما ثبتت أول مرة.
+        var got = '', setTries = 0;
+        while (setTries < 4) {
+          try { got = _sbSetAny(p, lines[textPos]); } catch (e1) { got = 'ERROR: ' + e1; }
+          if (got === lines[textPos]) break;
+          setTries++;
+          try { $.sleep(120); } catch (es) {}
+        }
         log.push({ name: dn, want: lines[textPos], got: got, ok: got === lines[textPos] });
       }
       textPos++;
@@ -458,6 +464,18 @@ function sb_clipAt(trackNum, atSec) {
       if (c.start.seconds <= at && (!best || c.start.seconds > best.start.seconds)) best = c;
     }
     if (!best) return _sbJson({ ok: false, error: 'لا يوجد فيديو على V' + (vt + 1) + ' عند أو قبل موضع المؤشر.' });
+    // امشِ للخلف فوق أي قطع/قص متلاصقة (cuts) بنفس الشريط عشان نوصل لبداية "القطعة" الحقيقية
+    // (أول فيديو متواصل) مش بس بداية القطعة الصغيرة اللي تحت المؤشر بالضبط.
+    var changed = true, EPS = 0.05;
+    while (changed) {
+      changed = false;
+      for (i = 0; i < trk.clips.numItems; i++) {
+        c = trk.clips[i];
+        if (Math.abs(c.end.seconds - best.start.seconds) < EPS && c.start.seconds < best.start.seconds) {
+          best = c; changed = true; break;
+        }
+      }
+    }
     return _sbJson({ ok: true, start: best.start.seconds - zero, end: best.end.seconds - zero });
   } catch (e) { return _sbJson({ ok: false, error: String(e) }); }
 }
@@ -880,7 +898,16 @@ function sb_fillRaw(spec) {
         if (!_sbIsText(raw)) continue;
         var want = getter.text(dn, textPos); textPos++;
         if (want == null) continue;
-        var got = ''; try { got = _sbSetAny(p, want); } catch (e2) { got = 'ERROR: ' + e2; }
+        // كتابة النص بعد ما ينزل الموقرت للتو أحياناً ما بتثبت من أول محاولة (خلل معروف بمحرّك
+        // سكربتة قوالب الموشن غرافيك ببريمير) — نتحقق من القراءة ونعيد المحاولة كذا مرة بفاصل
+        // بسيط قبل ما نستسلم، عشان ما يضيع جزء من العنوان بصمت.
+        var got = '', setTries = 0;
+        while (setTries < 4) {
+          try { got = _sbSetAny(p, want); } catch (e2) { got = 'ERROR: ' + e2; }
+          if (got === want) break;
+          setTries++;
+          try { $.sleep(120); } catch (es) {}
+        }
         log.push(dn + ' = ' + got);
       }
       return log;
