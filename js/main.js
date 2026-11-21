@@ -3622,6 +3622,49 @@
         })[0] || null
     }
 
+    // تنزل موقرت "AJ - Name Reporter" على V10 لكل فيديو مفعّل عليه الصندوق (يدوياً أو تلقائياً من الملاحظات)،
+    // تبدأ عند (بداية الفيديو + 5 ثواني وفريم)، وتاخد طولها الافتراضي من المكتبة (بدون قص). شغالة مع الحالتين:
+    // بناء من الصفر (tt/rt) وملء قالب جاهز موجود مسبقاً على التايم لاين (fillRaw) — بالاثنين وصلنا results+w.
+    async function placeReporterOverlays(results, wArr) {
+        var items = [];
+        (results || []).forEach(function(t, idx) {
+            if (t && t.ok) {
+                var c = wArr[idx] && wArr[idx].c;
+                c && c.rep && items.push({
+                    start: t.start
+                })
+            }
+        });
+        if (!items.length) return;
+        var repTpl = findReporterTpl();
+        if (!repTpl) return void f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w");
+        var repOffset = 5 + 1 / 25;
+        try {
+            var info = await m("sb_info");
+            info && info.ok && info.fps > 0 && (repOffset = 5 + 1 / info.fps)
+        } catch (eInfo) {}
+        var queue = items.map(function(it) {
+            return {
+                path: repTpl.file,
+                label: _(repTpl),
+                mname: repTpl.name,
+                name: repTpl.name,
+                start: it.start + repOffset,
+                lines: [],
+                menus: A(repTpl, 1),
+                menuNames: repTpl.menus.map(function(t) {
+                    return t.label
+                }),
+                textNames: repTpl.texts.map(function(t) {
+                    return t.label
+                })
+            }
+        }), pr = await m("sb_placeAll", queue, 10);
+        pr && pr.ok ? (pr.results || []).forEach(function(t) {
+            f("Name Reporter: " + (t.ok ? "نزلت على V10" : t.error || "فشل"), t.ok ? "ok" : "e")
+        }) : f("تعذّر إضافة Name Reporter: " + (pr && pr.error || "غير معروف"), "e")
+    }
+
     function we(t, a) {
         var i = String(t).trim().toLowerCase() + ".mogrt",
             o = [],
@@ -4108,13 +4151,19 @@
                         src: ae(P.source) || le(P.url),
                         date: F
                     });
-                if (G && G.ok && G.found > 0) return I.results.forEach(function(t, e) {
-                    (t.log || []).forEach(function(t) {
-                        t && f("فيديو " + (e + 1) + ": " + t, "w")
-                    })
-                }), (G.results || []).forEach(function(t) {
-                    f("الخام · " + t.name + ": " + (t.note || (t.log || []).join(" | ") || "تم"), t.ok ? "ok" : "e")
-                }), O.length > 1 && f("ملاحظة: القالب الجاهز يُملأ بنصوص أول فيديو فقط؛ الفيديوهات الإضافية وُضعت بعده على V" + p + ".", "w"), i("raw-bstate") && (i("raw-bstate").textContent = ""), void f("الخام: ملأت القالب الموجود على التايم لاين (" + G.found + " عنصر) وقصصت الطبقات الطويلة على طول الفيديو.", "ok");
+                if (G && G.ok && G.found > 0) {
+                    I.results.forEach(function(t, e) {
+                        (t.log || []).forEach(function(t) {
+                            t && f("فيديو " + (e + 1) + ": " + t, "w")
+                        })
+                    });
+                    (G.results || []).forEach(function(t) {
+                        f("الخام · " + t.name + ": " + (t.note || (t.log || []).join(" | ") || "تم"), t.ok ? "ok" : "e")
+                    });
+                    O.length > 1 && f("ملاحظة: القالب الجاهز يُملأ بنصوص أول فيديو فقط؛ الفيديوهات الإضافية وُضعت بعده على V" + p + ".", "w");
+                    await placeReporterOverlays(I.results, w);
+                    return i("raw-bstate") && (i("raw-bstate").textContent = ""), void f("الخام: ملأت القالب الموجود على التايم لاين (" + G.found + " عنصر) وقصصت الطبقات الطويلة على طول الفيديو.", "ok")
+                }
                 G && !1 === G.ok ? f("تعذّر ملء القالب الموجود: " + G.error, "e") : G && G.ok && !G.found && f("لم أجد قوالب الخام بأسمائها على هذا السيكونس. الكليبات الموجودة: " + ((G.seen || []).join(" ، ") || "لا شيء"), "w");
                 var z = function(t) {
                         var e = i(t) && i(t).value;
@@ -4154,11 +4203,6 @@
                             })
                         }), et++)
                     };
-                var repTpl = findReporterTpl(), repWarned = !1, repOffset = 5 + 1 / 25;
-                try {
-                    var repInfo = await m("sb_info");
-                    repInfo && repInfo.ok && repInfo.fps > 0 && (repOffset = 5 + 1 / repInfo.fps)
-                } catch (teRep) {}
                 for (var at in I.results.forEach(function(t, e) {
                         if (t.ok) {
                             (t.log || []).forEach(function(t) {
@@ -4172,7 +4216,7 @@
                                 s = me(n.subtitle, d("raw-mxs", 20)),
                                 c = ae(n.location),
                                 l = ae(n.source) || le(n.url);
-                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l)), n.rep && (repTpl ? rt(10, repTpl, r + repOffset, void 0, []) : repWarned || (repWarned = !0, f('لم أجد موقرت "AJ - Name Reporter" في مكتبة الموقرتات — أضفه لمجلد Motion Graphics Templates ثم اضغط "مسح القوالب".', "w")))
+                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
                         } else f("فيديو " + (e + 1) + ": " + (t.error || "فشل"), "e")
                     }), tt)
                     if (tt.hasOwnProperty(at)) {
@@ -4180,7 +4224,9 @@
                         it && !1 !== it.ok ? (it.results || []).forEach(function(t) {
                             t.ok || f("V" + at + " " + (t.name || "") + ": " + (t.error || "تحقق من النص داخل القالب"), "e")
                         }) : f("V" + at + ": " + (it && it.error || "تعذّر وضع العناوين"), "e")
-                    } et || f("لم أجد قوالب الخام في المكتبة (أضفها أولاً)، وُضعت الفيديوهات فقط.", "w"), i("raw-bstate") && (i("raw-bstate").textContent = ""), f("الخام: وُضع " + nt + " فيديو" + (et ? " مع " + et + " عنصر نصي." : "."), "ok")
+                    }
+                await placeReporterOverlays(I.results, w);
+                et || f("لم أجد قوالب الخام في المكتبة (أضفها أولاً)، وُضعت الفيديوهات فقط.", "w"), i("raw-bstate") && (i("raw-bstate").textContent = ""), f("الخام: وُضع " + nt + " فيديو" + (et ? " مع " + et + " عنصر نصي." : "."), "ok")
             } else f(I && I.error || "تعذّر وضع الفيديوهات.", "e")
         } else f("أضف فيديو واحداً على الأقل (رابط أو ملف).", "w")
     }

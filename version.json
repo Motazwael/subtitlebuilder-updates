@@ -1,6 +1,6 @@
 {
-  "version": "1.7.0",
-  "notes": "إصلاح دقة تقطيع التوقيت (00.00 - 01.35) + إضافة موقرت AJ - Name Reporter تلقائياً + مزامنته مع نسخة أحمر الآن",
+  "version": "1.7.1",
+  "notes": "إصلاح: موقرت AJ - Name Reporter الآن ينزل أيضاً لما البناء يستخدم قالب جاهز موجود مسبقاً على التايم لاين (مو بس عند البناء من الصفر)",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
