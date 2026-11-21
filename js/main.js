@@ -3817,6 +3817,32 @@
             st && (st.textContent = "")
         }
     }();
+
+    // إعادة ترتيب أزرار "ابنِ/حدّث النصوص/اختبر التنزيل" و"نسخة الآن الحمراء" بالـ JS
+    // (بدل index.html) عشان توحيد الشكل والتجميع المنطقي ينتشر لكل النسخ عن طريق
+    // التحديث البعيد: صف البناء أزراره متساوية بالحجم، وصف "نسخة الآن" منفصل بصرياً
+    // ومعلّم كـ "إجراء خاص" عشان ما يختلط مع أزرار البناء العادية.
+    !function() {
+        try {
+            var buildBtn = i("raw-build");
+            if (buildBtn) {
+                var row1 = buildBtn.closest(".actions");
+                row1 && row1.classList.add("actions-eq")
+            }
+            var nowBtn = i("raw-now");
+            if (nowBtn && !nowBtn.classList.contains("danger")) {
+                nowBtn.removeAttribute("style"), nowBtn.classList.add("danger");
+                var row2 = nowBtn.closest(".actions");
+                if (row2 && !row2.classList.contains("actions-special")) {
+                    row2.classList.add("actions-special");
+                    var tag = document.createElement("span");
+                    tag.className = "tag", tag.textContent = "إجراء خاص:";
+                    row2.insertBefore(tag, row2.firstChild)
+                }
+            }
+        } catch (e) {}
+    }();
+
     async function Ee() {
         var t = i("raw-state"),
             e = (i("raw-url").value || "").trim(),

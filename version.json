@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "notes": "زر حذف نصوص الخام + خط الجزيرة (كيمو) + إصلاح محاذاة النصوص",
+  "version": "1.5.0",
+  "notes": "توحيد حجم أزرار البناء + فصل زر «نسخة الآن» كإجراء خاص",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",

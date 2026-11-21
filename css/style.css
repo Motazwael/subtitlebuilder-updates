@@ -29,6 +29,14 @@ textarea { width:100%; padding:9px 10px; font-size:14px; line-height:1.7; resize
 input, select { padding:5px 8px; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .tile:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+/* صف أزرار متساوية الحجم (مثلاً: ابنِ / حدّث النصوص / اختبر التنزيل) — JS بيضيف هاي
+   الكلاس ديناميكياً عشان ما نحتاج نعدّل index.html. */
+.actions-eq .pill { flex:1 1 0; min-width:0; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* صف "إجراء خاص" (مثل نسخة الآن الحمراء) — نفصله بصرياً عن أزرار البناء العادية. */
+.actions-special { padding-top:10px; margin-top:10px; border-top:1px dashed var(--line); }
+.actions-special .tag { font-size:11px; color:var(--muted); font-weight:600; }
+.pill.danger { background:#c0392b; border-color:transparent; color:#fff; }
+.pill.danger:hover:not(:disabled) { border-color:#ff8a80; }
 .history-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
 .history-bar select { flex:1; min-width:140px; }
 .step .body h2.step-toggle { cursor:pointer; display:inline-flex; align-items:center; user-select:none; }
