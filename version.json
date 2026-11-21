@@ -1,6 +1,6 @@
 {
-  "version": "1.3.1",
-  "notes": "أيقونات سحاب لأزرار التحديث + اسم \"منشئ الخام\" لنسخة كيمو (إعادة مزامنة)",
+  "version": "1.3.2",
+  "notes": "إصلاح محاذاة النصوص العربية بصناديق الإدخال لليمين + أيقونات السحاب",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",

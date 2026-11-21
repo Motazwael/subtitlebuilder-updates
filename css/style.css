@@ -21,7 +21,10 @@ h2 { margin:2px 0 10px; font-size:14px; color:#fff; }
 .head.sub { margin:12px 0 6px; }
 .link { background:none; border:0; padding:0; color:var(--accent); font:inherit; cursor:pointer; }
 .link:hover { text-decoration:underline; }
-textarea, input, select { color:var(--text); background:var(--card2); border:1px solid var(--line); border-radius:8px; font:inherit; }
+/* المتصفحات افتراضياً بتحط اتجاه LTR على صناديق الإدخال حتى لو الصفحة كلها RTL —
+   لازم نفرض rtl/right هون صراحة عشان النصوص العربية تلزق يمين، وأي حقل تقني
+   (روابط/مسارات) إله قاعدة أخص تحته بتطغى عليه بـ direction:ltr الموجودة أصلاً. */
+textarea, input, select { color:var(--text); background:var(--card2); border:1px solid var(--line); border-radius:8px; font:inherit; direction:rtl; text-align:right; }
 textarea { width:100%; padding:9px 10px; font-size:14px; line-height:1.7; resize:vertical; }
 input, select { padding:5px 8px; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .tile:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
