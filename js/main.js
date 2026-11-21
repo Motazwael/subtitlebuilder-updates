@@ -3883,7 +3883,7 @@
             actionsDiv = nowBtn && nowBtn.closest(".actions");
         if (!actionsDiv || document.getElementById("raw-rep-now")) return;
         var btn = document.createElement("button");
-        btn.type = "button", btn.id = "raw-rep-now", btn.className = "pill", btn.textContent = "📻 أضف الصوت من المصدر الأصلي عند المؤشر";
+        btn.type = "button", btn.id = "raw-rep-now", btn.className = "pill", btn.textContent = "📻 أضف الصوت من المصدر الأصلي";
         nowBtn.insertAdjacentElement("afterend", btn);
         btn.onclick = async function() {
             btn.disabled = !0;
