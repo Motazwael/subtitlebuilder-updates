@@ -3797,6 +3797,26 @@
             }
         }), re(), ke(), i("raw-state") && (i("raw-state").textContent = ne.clips.length ? "وجدت " + ne.clips.length + " فيديو. راجع البطاقات وعدّلها." : "لم أجد فيديو. أضف بطاقة يدوياً.")) : f("وحدة الخام غير محمّلة.", "e")
     }
+
+    // زر "حذف النصوص" لوضع الخام: نولّده بالـ JS بدل index.html عشان ينتشر لكل
+    // النسخ المركّبة عن طريق التحديث البعيد. يمسح صندوق السكربت ورابط المستند
+    // وكل البطاقات المستخرجة منه (بس وضع الخام، حسب الطلب).
+    !function() {
+        var actionsDiv = document.querySelector("#raw-st1 .actions");
+        if (!actionsDiv || document.getElementById("raw-clear")) return;
+        var btn = document.createElement("button");
+        btn.type = "button", btn.id = "raw-clear", btn.className = "link", btn.textContent = "🗑️ حذف النصوص";
+        actionsDiv.appendChild(btn);
+        btn.onclick = function() {
+            var ta = i("raw-text");
+            ta && (ta.value = "");
+            var u = i("raw-url");
+            u && (u.value = "");
+            ne.clips = [], re(), ke();
+            var st = i("raw-state");
+            st && (st.textContent = "")
+        }
+    }();
     async function Ee() {
         var t = i("raw-state"),
             e = (i("raw-url").value || "").trim(),
