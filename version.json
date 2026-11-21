@@ -1,10 +1,13 @@
 {
   "version": "1.4.0",
-  "notes": "زر حذف نصوص وضع الخام + إصلاح محاذاة النصوص",
+  "notes": "زر حذف نصوص الخام + خط الجزيرة (كيمو) + إصلاح محاذاة النصوص",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
     "js/raw.js","js/quote.js","js/main.js","jsx/host.jsx","css/style.css"
+  ],
+  "optionalFiles": [
+    "css/kimo.css"
   ],
   "assets": [
     "assets/logo.png"

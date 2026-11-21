@@ -1,0 +1,11 @@
+/* تخصيصات نسخة كيمو فقط — هذا الملف محلي ولا يُستبدل تلقائياً أبداً (مثل license.js
+   و update.config.js)، عكس css/style.css المشترك. أي تعديل شكل خاص بنسخة كيمو يروح هون. */
+
+header { position:relative; padding-left:40px; }
+#brand-logo { position:absolute; left:0; top:0; height:34px; width:auto; object-fit:contain; }
+.author .author-ar { letter-spacing:normal; }
+
+/* خط الجزيرة — مركّب أصلاً على كل أجهزتكم كخط نظام (اسمه "Al Jazeera New")، فبس
+   نشير له بالاسم من غير ما نحمّل ملف الخط بالإضافة. لو الجهاز ما فيه الخط، بيرجع
+   تلقائياً للخطوط الاحتياطية بعده. */
+body, button, input, select, textarea { font-family: "Al Jazeera New", -apple-system, "Segoe UI", Tahoma, sans-serif; font-weight: 700; }
