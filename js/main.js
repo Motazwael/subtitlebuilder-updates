@@ -5354,6 +5354,6 @@
     try {
         if (!document.getElementById("brand-logo")) return; // مش نسخة كيمو
         var h1 = document.querySelector("header h1");
-        if (h1) h1.textContent = "منشئ الخام";
+        if (h1) h1.textContent = "ELBANA";
     } catch (e) {}
 }();

@@ -1,6 +1,6 @@
 {
-  "version": "1.7.1",
-  "notes": "إصلاح: موقرت AJ - Name Reporter الآن ينزل أيضاً لما البناء يستخدم قالب جاهز موجود مسبقاً على التايم لاين (مو بس عند البناء من الصفر)",
+  "version": "1.7.2",
+  "notes": "تحسينات وحماية وأزرار جديدة",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
