@@ -1,9 +1,12 @@
 // نسخة "الخام" الخاصة — كيمو
 // 1) يخلي وضع الخام هو الوحيد الظاهر (يخبي تبويبات الفيديوغراف/الاقتباس/الريل).
-// 2) يقفل الإضافة على هذا الجهاز بالذات: ما تشتغل إلا برمز تفعيل مبني على بصمة هذا الجهاز.
-//    البصمة = اسم الجهاز + أول MAC address + نظام التشغيل، مُلخّصة بـ SHA-256.
-//    الرمز الصحيح = HMAC-SHA256(SECRET, البصمة) — بدون معرفة SECRET ما حدا غير اللي معه السكربت
-//    generate_serial.js (خارج الإضافة) يقدر يحسب رمز صحيح لأي جهاز.
+// 2) يقفل الإضافة على هذا الجهاز بالذات: ما تشتغل إلا برمز تفعيل مبني على معرّف هذا الجهاز.
+//    المعرّف: رقم عشوائي يتولّد مرة وحدة أول ما تفتح الإضافة على أي جهاز، ويتخزن بملف
+//    بمجلد المستخدم (~/.subtitlebuilder/kimo-device-id.json) — وليس مبني على بصمة هاردوير
+//    أو شبكة (MAC / UUID نظام)، لأن هاي تطلع غير ثابتة فعلياً جوا بيئة بريمير (CEP) بسبب
+//    قيود تشغيل أوامر النظام، فكانت تولّد معرف مختلف كل ما تفتح بريمير من جديد.
+//    الرمز الصحيح = HMAC-SHA256(SECRET, المعرّف) — بدون معرفة SECRET ما حدا غير اللي معه السكربت
+//    generate_serial.js (خارج الإضافة) يقدر يحسب رمز صحيح لأي معرّف.
 (function () {
     "use strict";
 
@@ -31,45 +34,34 @@
     // غيّر هاد النص لأي شيء تحبه — بس خليه نفسه بالضبط بملف generate_serial.js المرفق
     var SECRET = "Kimo-SubtitleBuilder-2026";
 
-    // بصمة ثابتة فعلياً: UUID النظام نفسه (ثابت مهما تغيّرت الشبكة/VPN/محولات وهمية)،
-    // بدل الاعتماد القديم على أول MAC address — كان بيتغيّر كل ما يتصل/ينفصل VPN أو
-    // يظهر محول شبكة وهمي (utun, AnyDesk, إلخ) فيغيّر ترتيب الفرز ويطلع بصمة مختلفة.
-    function stableSystemId() {
-        try {
-            var execSync = require("child_process").execSync;
-            if (os.platform() === "darwin") {
-                var out = execSync('ioreg -rd1 -c IOPlatformExpertDevice', { encoding: "utf8" });
-                var m = /"IOPlatformUUID"\s*=\s*"([^"]+)"/.exec(out);
-                if (m) return m[1];
-            } else if (os.platform() === "win32") {
-                var out2 = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', { encoding: "utf8" });
-                var m2 = /MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]+)/.exec(out2);
-                if (m2) return m2[1];
-            }
-        } catch (e) {}
-        return "";
+    // معرّف الجهاز: رقم عشوائي يتولّد مرة وحدة بس ويتخزن بملف بمجلد المستخدم — مش مبني على
+    // أي بصمة هاردوير أو شبكة (جرّبنا UUID النظام وأوامر النظام، وطلعت مش ثابتة فعلياً جوا
+    // بيئة بريمير CEP لأسباب صلاحيات/sandbox، فكانت تتغيّر كل ما يفتح بريمير من جديد).
+    // هاي الطريقة الوحيدة المضمونة 100% إنها ثابتة طول ما الملف موجود.
+    function idFilePath() {
+        try { return (os.homedir() + "/.subtitlebuilder/kimo-device-id.json").replace(/\\/g, "/"); } catch (e) { return ""; }
     }
 
     function machineId() {
-        var stable = stableSystemId(), raw;
-        if (stable) {
-            raw = [stable, os.platform(), os.arch()].join("|");
-        } else {
-            // احتياط فقط لو تعذّر جلب UUID النظام (نادر): نرجع لطريقة MAC القديمة.
-            var nets = {};
-            try { nets = os.networkInterfaces() || {}; } catch (e) {}
-            var mac = "";
-            Object.keys(nets).sort().some(function (name) {
-                return (nets[name] || []).some(function (ni) {
-                    if (ni && ni.mac && ni.mac !== "00:00:00:00:00:00" && !ni.internal) {
-                        return mac = ni.mac, !0
-                    }
-                    return !1
-                })
-            });
-            raw = [os.hostname(), mac, os.platform(), os.arch()].join("|");
+        var fs;
+        try { fs = require("fs"); } catch (e) { fs = null; }
+        var file = idFilePath();
+        if (fs && file) {
+            try {
+                var obj = JSON.parse(fs.readFileSync(file, "utf8"));
+                if (obj && obj.id && /^[0-9A-F]{16}$/.test(obj.id)) return obj.id;
+            } catch (e) {}
         }
-        return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 16).toUpperCase()
+        // أول مرة (أو تعذّر القراءة): نولّد معرف جديد ونحاول نخزنه عشان يضل ثابت بعدها.
+        var id = crypto.randomBytes(8).toString("hex").toUpperCase();
+        if (fs && file) {
+            try {
+                var dir = file.substring(0, file.lastIndexOf("/"));
+                fs.mkdirSync(dir, { recursive: true });
+                fs.writeFileSync(file, JSON.stringify({ id: id }), "utf8");
+            } catch (e) {}
+        }
+        return id;
     }
 
     function expectedSerial(id) {
