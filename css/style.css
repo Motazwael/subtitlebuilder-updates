@@ -4,7 +4,11 @@
    تنزل سكرول بعد آخر المحتوى (أو تصعد قبل أوله) — إحساس "غبي"/مهزوز بالسكرول. بنعطّله هون. */
 html, body { margin:0; background:var(--bg); color:var(--text); font:13px/1.55 "Segoe UI","Geeza Pro","Helvetica Neue",system-ui,sans-serif; overscroll-behavior:none; }
 main { padding:14px 14px 28px; }
-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; }
+header { position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; }
+/* نسخة كيمو بس (كلاس kimo-header مضاف بالـ JS): نثبّت بلوك العنوان بمنتصف الهيدر
+   تماماً (position:absolute) بغض النظر عن عرض الشعار/زر الإعدادات المجاورين،
+   لأنه flex:1 لحالها ما كانت كافية لما العناصر المجاورة عروضها غير متساوية. */
+header.kimo-header .logo { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); flex:none; white-space:nowrap; pointer-events:none; }
 #theme-row { display:flex; gap:6px; justify-content:flex-end; margin-bottom:14px; }
 #theme-row .swatch { width:16px; height:16px; border-radius:50%; border:2px solid transparent; padding:0; cursor:pointer; }
 #theme-row .swatch.on { border-color:#fff; }
