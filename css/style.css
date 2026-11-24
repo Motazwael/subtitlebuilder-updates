@@ -7,6 +7,10 @@ header { display:flex; justify-content:space-between; align-items:center; margin
 #theme-row .swatch { width:16px; height:16px; border-radius:50%; border:2px solid transparent; padding:0; cursor:pointer; }
 #theme-row .swatch.on { border-color:#fff; }
 h1 { margin:0; font-size:17px; color:#fff; }
+/* عنوان نسخة كيمو ("منشئ الخام") بستايل أبرز شوي من العنوان العادي: تدرّج لوني
+   من الأبيض للون البرتقالي الأساسي (--accent) مع وزن أثقل. مطبّق بس على h1 اللي
+   جوا header (نسخة كيمو) عشان ما يأثّر على أي h1 تاني بالصفحة. */
+header h1 { font-weight:800; font-size:19px; letter-spacing:.01em; background:linear-gradient(90deg,#fff,var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .author { margin:0; font-size:10px; letter-spacing:.25em; color:var(--accent); font-weight:700; direction:ltr; text-align:right; }
 #chips { display:flex; gap:5px; flex-wrap:wrap; }
 .chip { padding:2px 9px; font-size:11px; border-radius:999px; background:var(--card2); color:var(--muted); border:1px solid var(--line); }

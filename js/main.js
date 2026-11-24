@@ -5926,12 +5926,16 @@
     } catch (e) {}
 }();
 
-// استبدال اسم "KEMOO" بـ "ELBANA" بسطر المؤلف تحت الشعار — index.html نفسه ما بيتحدث، فبنعدّلها
-// بالـ JS (ملف مشترك) عشان تنتشر تلقائياً لكل نسخ كيمو المركّبة عن طريق التحديث البعيد.
+// شيل كلمة "ELBANA" (وكل بقايا "KEMOO" القديمة لو انكتبت بأي نسخة) من سطر المؤلف
+// تحت الشعار، ويضل بس "MOTAZ WAEL" — index.html نفسه ما بيتحدث، فبنعدّلها بالـ JS
+// (ملف مشترك) عشان تنتشر تلقائياً لكل نسخ كيمو المركّبة عن طريق التحديث البعيد.
 !function () {
     try {
         var p = document.querySelector(".author");
-        if (p && /KEMOO/.test(p.innerHTML)) p.innerHTML = p.innerHTML.replace(/KEMOO/g, "ELBANA");
+        if (!p) return;
+        p.childNodes.forEach(function (node) {
+            if (node.nodeType === 3) node.textContent = node.textContent.replace(/\s*[·•]?\s*(ELBANA|KEMOO)\s*/gi, " ").replace(/\s+/g, " ").trim() + " ";
+        });
     } catch (e) {}
 }();
 
