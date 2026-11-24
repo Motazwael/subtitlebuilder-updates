@@ -2593,7 +2593,7 @@
     }
     // شريط تقدّم بصري بسيط (نفس كلاس .pbar/.pbar-fill المستخدم لتثبيت نموذج المحاذاة) —
     // بينحط تلقائياً جنب أي عنصر حالة تنزيل، وبيتحدّث مع كل نسبة جديدة توصل من jt().
-    function Wt(el, pct, done) {
+    function sbDlBar(el, pct, done) {
         if (!el || !el.parentNode) return;
         var bar = el.parentNode.querySelector(".dlbar");
         if (done) return void(bar && (bar.hidden = !0));
@@ -2724,14 +2724,14 @@
                     o("جاري التنزيل… (" + g[k][0] + ")");
                     try {
                         w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
-                            o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), Wt(a, pc)
+                            o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), sbDlBar(a, pc)
                         })
                     } catch (e) {
                         if (b.push(g[k][0] + ": " + String(e.message).slice(0, 260)), !x && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && s === _t) {
                             x = !0, o("تحديث الأداة…");
                             try {
                                 await jt(s, ["-U"]), w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
-                                    o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), Wt(a, pc)
+                                    o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), sbDlBar(a, pc)
                                 })
                             } catch (t) {
                                 b.push("بعد التحديث: " + String(t.message).slice(0, 120))
@@ -2755,9 +2755,9 @@
                 if (!E || !e.existsSync(E)) throw new Error("لم يظهر الملف بعد التنزيل.");
                 E = await Ft(E, p, o), i[t.url] = E, h("sb.dlmap", JSON.stringify(i));
                 var S = await m("sb_importFile", E, u ? "01_Video" : "");
-                c.dl[t.url] = !0, Wt(a, 0, !0), o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + d + ")."), "ok")
+                c.dl[t.url] = !0, sbDlBar(a, 0, !0), o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + d + ")."), "ok")
             } catch (e) {
-                Wt(a, 0, !0);
+                sbDlBar(a, 0, !0);
                 o("⬇ أعد المحاولة");
                 var C = String(e.message || e).slice(0, 400),
                     hasCookieFile = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
@@ -4079,14 +4079,14 @@
                 a("جاري التنزيل… (" + S[_][0] + ")");
                 try {
                     C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
-                        a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), Wt(t._st, pc)
+                        a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), sbDlBar(t._st, pc)
                     })
                 } catch (e) {
                     if (M.push(S[_][0] + ": " + String(e.message).slice(0, 260)), !N && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && v === _t) {
                         N = !0, a("تحديث الأداة…");
                         try {
                             await jt(v, ["-U"]), C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
-                                a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), Wt(t._st, pc)
+                                a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), sbDlBar(t._st, pc)
                             })
                         } catch (t) {
                             M.push("بعد التحديث: " + String(t.message).slice(0, 120))
@@ -4128,7 +4128,7 @@
             var I = C.split("\n").filter(function(t) {
                 return t.trim()
             }).length;
-            return I > 1 && f("الرابط أنزل " + I + " ملفات؛ اخترت الأخير. حدّد «رقم الفيديو داخل الرابط» إن أردت غيره.", "w"), L = await Ft(L, x, a), o[u] = L, h("sb.dlmap", JSON.stringify(o)), Wt(t._st, 0, !0), a("✓ نُزّل", "ok"), {
+            return I > 1 && f("الرابط أنزل " + I + " ملفات؛ اخترت الأخير. حدّد «رقم الفيديو داخل الرابط» إن أردت غيره.", "w"), L = await Ft(L, x, a), o[u] = L, h("sb.dlmap", JSON.stringify(o)), sbDlBar(t._st, 0, !0), a("✓ نُزّل", "ok"), {
                 file: L,
                 trimmed: l,
                 bin: w ? "01_Video" : ""
@@ -4217,7 +4217,7 @@
                         c: y
                     }), y._st && (y._st.textContent = "✓ جاهز", y._st.className = "rc-st ok")
                 } catch (t) {
-                    Wt(y._st, 0, !0);
+                    sbDlBar(y._st, 0, !0);
                     var j = String(t.message || t).slice(0, 400);
                     /login required|rate-limit|cookies/i.test(j) && (j = "الموقع يطلب تسجيل دخول: اختر ملف كوكيز (cookies.txt) في الإعدادات أو سجّل الدخول في كروم. — " + j.slice(0, 200)), y._st && (y._st.textContent = j, y._st.className = "rc-st e"), f("تعذّر تنزيل الفيديو " + (k + 1) + ": " + j, "e")
                 }
