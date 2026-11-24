@@ -3771,37 +3771,57 @@
         }(function(t, e, n) {
             var r = teClean(t);
             if (!r) return [];
-            var a = r.split(" "),
-                i = Math.min(e, Math.max(1, Math.ceil(r.length / n)));
-            if (i <= 1 || a.length < 2) return [r];
-            i = Math.min(i, a.length);
-            var o = null,
-                s = 1 / 0;
-            if (function t(e, n, r) {
+            var a = r.split(" ");
+            if (a.length < 2) return [r];
+            var maxParts = Math.min(e, a.length);
+            // تقدير أول لعدد الأسطر من متوسط الطول — بس قسمة المتوسط ممكن تقلّل عدد
+            // الأسطر اللازم فعلاً (مثلاً لو كلمة وحدة طويلة كتير بتكسر التوازن)، فبدل
+            // ما نكتفي فيه، منجرّب نزيد عدد الأسطر تدريجياً لحد ما نلاقي قسمة كل سطر
+            // فيها ≤ n حرف فعلياً (الحد الأقصى المسموح بالقالب)، أو نوصل لأقصى عدد
+            // أسطر مسموح — هيك ما بيطلع ولا سطر يطفح برا صندوق النص ويختفي جزء منه.
+            var startI = Math.min(maxParts, Math.max(1, Math.ceil(r.length / n)));
+
+            function bestSplitFor(i) {
+                var o = null,
+                    s = 1 / 0;
+                ! function t(e, n, r) {
                     if (1 === n) {
-                        var i = (r = r.concat([a.slice(e)])).map(function(t) {
-                                return t.join(" ").length
+                        var ii = (r = r.concat([a.slice(e)])).map(function(w) {
+                                return w.join(" ").length
                             }),
-                            c = Math.max.apply(null, i),
-                            l = Math.min.apply(null, i);
-                        fe.test(r[r.length - 1][r[r.length - 1].length - 1]);
+                            c = Math.max.apply(null, ii),
+                            l = Math.min.apply(null, ii);
                         // هوية بصرية موحّدة للأسطر: نفضّل تدرّج أطوال الأسطر بشكل هرمي
                         // ثابت الاتجاه (كل سطر دايماً أطول أو دايماً أقصر من يلي قبله —
                         // من فوق لتحت أو العكس، أيّهما أنضف) بدل ترتيب عشوائي للأطوال.
                         // تفضيل ثانوي بس — وزنه أصغر بكتير من وزن أطول سطر (١٠٠) حتى ما
                         // يضحّي بسطر يطفح برا صندوق النص بس عشان يطلع هرمي.
-                        for (var incBreaks = 0, decBreaks = 0, mi = 1; mi < i.length; mi++) i[mi] < i[mi - 1] ? incBreaks++ : i[mi] > i[mi - 1] && decBreaks++;
+                        for (var incBreaks = 0, decBreaks = 0, mi = 1; mi < ii.length; mi++) ii[mi] < ii[mi - 1] ? incBreaks++ : ii[mi] > ii[mi - 1] && decBreaks++;
                         var u = 100 * c + (c - l) + 20 * Math.min(incBreaks, decBreaks);
                         u < s && (s = u, o = r)
                     } else
                         for (var f = e + 1; f <= a.length - (n - 1); f++) fe.test(a[f - 1]) || t(f, n - 1, r.concat([a.slice(e, f)]))
-                }(0, i, []), !o) {
-                var c = Math.ceil(a.length / i);
-                o = [];
-                for (var l = 0; l < a.length; l += c) o.push(a.slice(l, l + c))
+                }(0, i, []);
+                if (!o) {
+                    var c2 = Math.ceil(a.length / i);
+                    o = [];
+                    for (var l2 = 0; l2 < a.length; l2 += c2) o.push(a.slice(l2, l2 + c2))
+                }
+                return o
             }
-            return o.map(function(t) {
-                return t.join(" ")
+            for (var chosen = null, bestFallback = null, bestFallbackMax = 1 / 0, i = startI; i <= maxParts; i++) {
+                var attempt = bestSplitFor(i),
+                    lens = attempt.map(function(w) {
+                        return w.join(" ").length
+                    }),
+                    maxLen = Math.max.apply(null, lens);
+                if (maxLen < bestFallbackMax && (bestFallbackMax = maxLen, bestFallback = attempt), maxLen <= n) {
+                    chosen = attempt;
+                    break
+                }
+            }
+            return (chosen || bestFallback || [a]).map(function(w) {
+                return w.join(" ")
             })
         }(t, maxLines, e))
     }
