@@ -2742,7 +2742,7 @@
         };
         return o("في الانتظار…"), c.dlChain = (c.dlChain || Promise.resolve()).then(async function() {
             var plat = sbPlatformName(t.url),
-                ffp, u, dlDir;
+                ffp, u, dlDir, startTime = Date.now();
 
             async function finishWithFile(filePath) {
                 try {
@@ -2815,6 +2815,21 @@
                 var E = w.split("\n").map(function(t) {
                     return t.trim()
                 }).filter(Boolean).pop();
+                if (!E || !e.existsSync(E)) {
+                    // أحياناً يطلع yt-dlp أو المسار البديل نتيجة ناجحة بس المسار المطبوع ما
+                    // يطابق تماماً الملف الفعلي (تحويل صيغة، إلخ) — نفحص المجلد عن أحدث ملف
+                    // فيديو انكتب تواً، بدل ما نفشل فوراً (نفس أسلوب الفحص المستخدم ببناء الخام).
+                    var scanned = "",
+                        scanT = 0;
+                    try {
+                        e.readdirSync(dlDir).forEach(function(fn) {
+                            var fp2 = r.join(dlDir, fn),
+                                st2 = e.statSync(fp2);
+                            /\.(mp4|mkv|webm|mov|m4v)$/i.test(fn) && st2.mtimeMs >= startTime - 2e3 && st2.mtimeMs > scanT && (scanT = st2.mtimeMs, scanned = fp2)
+                        })
+                    } catch (t) {}
+                    E = scanned
+                }
                 if (!E || !e.existsSync(E)) throw new Error("لم يظهر الملف بعد التنزيل.");
                 E = await Ft(E, ffp, o), dlmap[t.url] = E, h("sb.dlmap", JSON.stringify(dlmap));
                 var S = await m("sb_importFile", E, u ? "01_Video" : "");
