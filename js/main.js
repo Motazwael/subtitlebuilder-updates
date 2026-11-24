@@ -2813,7 +2813,12 @@
         var o = function(t) {
             a && (a.textContent = t)
         };
-        return o("في الانتظار…"), c.dlChain = (c.dlChain || Promise.resolve()).then(async function() {
+        // مهم: c.dlChain مشتركة بين كل التنزيلات بكل أنحاء الإضافة (هون وبوضع الخام)
+        // عشان تسلسلها تنزيل وحدة وحدة. لو فيديو سابق فشل، الـ promise المخزّنة بـc.dlChain
+        // تصير مرفوضة (rejected) — ولو بنربط عليها .then() مباشرة بدون .catch() قبلها،
+        // أي تنزيل جديد بعدها (حتى لرابط تاني كلياً) رح يفشل فوراً بنفس خطأ الفيديو
+        // الأول القديم، من غير ما ينفّذ أي كود فعلي! لازم نمتص أي رفض سابق أول.
+        return o("في الانتظار…"), c.dlChain = (c.dlChain || Promise.resolve()).catch(function() {}).then(async function() {
             var plat = sbPlatformName(t.url),
                 ffp, u, dlDir, startTime = Date.now();
 
@@ -4228,7 +4233,10 @@
     }
 
     function Se(t) {
-        return c.dlChain = (c.dlChain || Promise.resolve()).then(async function() {
+        // نفس ملاحظة Ht() فوق: لازم نمتص أي رفض سابق بالسلسلة المشتركة قبل ما نضيف
+        // تنزيل جديد، وإلا أي فشل قديم (حتى لفيديو/رابط تاني كلياً) بيفشّل كل تنزيل
+        // جاي بعده تلقائياً بنفس الخطأ القديم، من غير ما ينفّذ أي محاولة فعلية جديدة.
+        return c.dlChain = (c.dlChain || Promise.resolve()).catch(function() {}).then(async function() {
             var a = function(e, n) {
                     t._st && (t._st.textContent = e, t._st.className = "rc-st" + (n ? " " + n : ""))
                 },
@@ -4252,28 +4260,12 @@
                 file: o[u],
                 trimmed: l && !untrimmedManual[u]
             };
-            var d = Date.now();
-            a("أجهّز أداة التنزيل…");
-            var v = await Lt(!1),
-                g = null;
-            try {
-                g = await m("sb_info")
-            } catch (t) {}
-            var w = g && g.ok && g.projectPath ? r.dirname(g.projectPath) : "",
-                b = w ? r.join(w, "01_Video") : r.join(n.homedir(), "Downloads", "SubtitleBuilder_Materials");
-            t.sub && (b = r.join(b, t.sub));
-            try {
-                e.mkdirSync(b, {
-                    recursive: !0
-                })
-            } catch (t) {}
+            var modalShown = !1;
+            // محسوبة هون، قبل أي خطوة ممكن تفشل (زي تجهيز أداة yt-dlp)، عشان زر
+            // «ارفع الفيديو من جهازك» بنافذة الفشل يضل شغّال حتى لو صار الفشل
+            // بدري جداً قبل ما توصل منطق التنزيل الفعلي أصلاً.
             var x = Q(["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]);
             l && !x && (l = !1);
-            var k = l ? "-" + Math.round(s) + "s-" + Math.round(toSec) + "s" : "",
-                y = Math.max(1, t.pi || 1),
-                E = ["--playlist-items", String(y), "--no-warnings", "-o", r.join(b, "%(title).50B-%(id)s" + (y > 1 ? "-" + y : "") + k + ".%(ext)s"), "--print", "after_move:filepath"];
-            E = Bt(x).concat(E), l && (E = ["--download-sections", "*" + s + "-" + toSec, "--force-keyframes-at-cuts"].concat(E));
-            var plat2 = sbPlatformName(t.url);
 
             async function onManualPick(filePath) {
                 sbForceRepaint();
@@ -4300,6 +4292,27 @@
                     sbForceRepaint(), f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
                 }
             }
+            try {
+            var d = Date.now();
+            a("أجهّز أداة التنزيل…");
+            var v = await Lt(!1),
+                g = null;
+            try {
+                g = await m("sb_info")
+            } catch (t) {}
+            var w = g && g.ok && g.projectPath ? r.dirname(g.projectPath) : "",
+                b = w ? r.join(w, "01_Video") : r.join(n.homedir(), "Downloads", "SubtitleBuilder_Materials");
+            t.sub && (b = r.join(b, t.sub));
+            try {
+                e.mkdirSync(b, {
+                    recursive: !0
+                })
+            } catch (t) {}
+            var k = l ? "-" + Math.round(s) + "s-" + Math.round(toSec) + "s" : "",
+                y = Math.max(1, t.pi || 1),
+                E = ["--playlist-items", String(y), "--no-warnings", "-o", r.join(b, "%(title).50B-%(id)s" + (y > 1 ? "-" + y : "") + k + ".%(ext)s"), "--print", "after_move:filepath"];
+            E = Bt(x).concat(E), l && (E = ["--download-sections", "*" + s + "-" + toSec, "--force-keyframes-at-cuts"].concat(E));
+            var plat2 = sbPlatformName(t.url);
             var S = It(t.url),
                 C = null,
                 M = [],
@@ -4335,7 +4348,7 @@
                     var joined = M.join(" | "),
                         hasCookieFile2 = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
                     if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
-                    sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
+                    modalShown = !0, sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
                     throw new Error(joined)
                 }
                 C = A, l = !1
@@ -4358,7 +4371,7 @@
             if (!L || !e.existsSync(L)) {
                 var finalMsg = "لم يظهر الملف بعد التنزيل. " + String(C).replace(/\s+/g, " ").slice(-160);
                 /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(t.url) && (finalMsg += " — تيليغرام غالباً بيحتاج حجم الفيديو يكون أصغر من حد المعاينة (حوالي ٢٠ ميغا) حتى تقدر الأداة تشوفه بدون تسجيل دخول. لو الفيديو أكبر من هيك ما في طريقة آلية تجيبه — نزّله يدوياً من تطبيق تيليغرام نفسه وارفعه بزر «ارفع الفيديو من جهازك» تحت.");
-                sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
+                modalShown = !0, sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
                 throw new Error(finalMsg)
             }
             var I = C.split("\n").filter(function(t) {
@@ -4368,6 +4381,17 @@
                 file: L,
                 trimmed: l,
                 bin: w ? "01_Video" : ""
+            }
+            } catch (outerErr) {
+                // أي خطأ غير متوقع (مثلاً تعذّر تجهيز/تنزيل أداة yt-dlp نفسها، أو مشكلة
+                // بالشبكة قبل ما نوصل لأي محاولة تنزيل فعلية) ما كان رح يطلع ولا رسالة
+                // ولا نافذة منبثقة، ويفشل بصمت تام. هون منلتقط أي استثناء من هيك ومنعرض
+                // نفس نافذة «تعذّر التحميل» دايماً، حتى لو السبب غير متوقع.
+                if (!modalShown) {
+                    sbDlBar(t._st, 0, !0);
+                    sbDlFailModal(t.url, onManualPick, function() {});
+                }
+                throw new Error(String(outerErr && (outerErr.message || outerErr)).slice(0, 220))
             }
         })
     }
