@@ -2652,7 +2652,7 @@
     }
     // روابط جوجل درايف ما بيفهمها yt-dlp إطلاقاً (مش منصة فيديوهات)، فمحاولة تمريرها لأداة
     // التنزيل العادية هي مضيعة وقت أكيدة الفشل. نتعرّف على رابط درايف ونطلع معرّف الملف منه
-    // (بيدعم كل الصيغ الشائعة لمشاركة الروابط من درايف) لنحمّله بطريقة خاصة فيه (Gt).
+    // (بيدعم كل الصيغ الشائعة لمشاركة الروابط من درايف) لنحمّله بطريقة خاصة فيه (Qt).
     function sbGDriveId(u) {
         u = String(u || "");
         if (!/drive\.google\.com|docs\.google\.com/i.test(u)) return "";
@@ -2795,7 +2795,7 @@
     // نعيد الطلب فيه (مع نفس الكوكيز يلي رجعت بالرد الأول) حتى يعطينا الملف الحقيقي.
     // هاد الأسلوب هو نفسه المعتمد بأدوات تنزيل جوجل درايف المعروفة (زي gdown)، بس ممكن
     // جوجل تغيّر شكل صفحة التحذير من وقت لوقت — إذا صار هيك لازم نراجع الـ regex تحت.
-    function Gt(gid, destDir, n, a, stEl) {
+    function Qt(gid, destDir, n, a, stEl) {
         return new Promise(function(resolve, reject) {
             var https = require("https"),
                 cookies = [],
@@ -4431,7 +4431,7 @@
             }
             // رابط جوجل درايف (أحياناً المحرر بيضيف رابط درايف بدل رابط منصة تواصل) — yt-dlp
             // ما بيفهم جوجل درايف إطلاقاً فمحاولة تمريره له مضمونة تفشل، فنتعرّف عليه فوراً
-            // ونحمّله بطريقة خاصة (Gt) تتجاوز أداة التنزيل العادية بالكامل.
+            // ونحمّله بطريقة خاصة (Qt) تتجاوز أداة التنزيل العادية بالكامل.
             var gdriveId = sbGDriveId(t.url);
             if (gdriveId) {
                 try {
@@ -4450,7 +4450,7 @@
                     } catch (t) {}
                     var gy = Math.max(1, t.pi || 1);
                     a("جاري التنزيل… Google Drive");
-                    var gFile = await Gt(gdriveId, gb, gy, a, t._st);
+                    var gFile = await Qt(gdriveId, gb, gy, a, t._st);
                     return gFile = await Ft(gFile, x, a), o[u] = gFile, h("sb.dlmap", JSON.stringify(o)), sbDlBar(t._st, 0, !0), a("✓ نُزّل", "ok"), {
                         file: gFile,
                         trimmed: l,
