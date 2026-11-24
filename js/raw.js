@@ -13,7 +13,7 @@
             ["loc", /^(?:الموقع|المكان|مكان|اللوكيشن|لوكيشن|المدينة|Location|Place)/i],
             ["src", /^(?:المصدر|Source)/i],
             ["link", /^(?:رابط\s*الفيديو|الرابط|رابط|اللينك|اللينكات|لينك|الخامة|Video\s*link|Video|Link|URL)/i],
-            ["time", /^(?:التوقيت|الوقت|الزمن|المقطع|المدة|Timecode|Time|TC|Range|In\s*\/?\s*Out)/i],
+            ["time", /^(?:تايم\s*كود|التوقيت|الوقت|الزمن|المقطع|المدة|Timecode|Time|TC|Range|In\s*\/?\s*Out)/i],
             ["caption", /^(?:الكابشن|كابشن|Caption)/i],
             ["note", /^(?:ملاحظات?|Notes?|Description)/i]
         ],
@@ -168,23 +168,32 @@
         }
 
         var blankRun = 0;
-        lines.forEach(function (raw) {
+        for (var li = 0; li < lines.length; li++) {
+            var raw = lines[li];
             if (!raw) {
                 // سطر فاضي: ما بينهي حقل عم يتجمّع فيه محتوى (نحافظ على فقرات متعددة الأسطر
                 // بالملاحظات/الكابشن). بس إذا حقل متفتح وفاضي (مثلاً "سابتيتل" أو "ملاحظات" جايين
                 // لحالهم بدون قيمة) ومرقت عليه ٢+ سطر فاضي والسجل خلص أصلاً (عنوان/رابط موجودين)،
-                // نسكر الحقل — غير هيك أي فقرة حرة متروكة بآخر السكربت (نص المنشور الأصلي للمرجع
-                // مثلاً) بتنكب بالغلط جوا هاد الحقل الفاضي وتصير "فيديو" تاني وهمي فاضي.
-                return void(++blankRun >= 2 && field && !buf.length && m(cur) && (field = null));
+                // ممكن نسكر الحقل — غير هيك أي فقرة حرة متروكة بآخر السكربت (نص المنشور الأصلي
+                // للمرجع مثلاً) بتنكب بالغلط جوا هاد الحقل الفاضي وتصير "فيديو" تاني وهمي فاضي.
+                // بس قبل ما نسكره: لازم نتأكد إنه ما في عنوان حقل معروف جاي لاحقاً بباقي السكربت —
+                // لأنه لو في، يعني قيمة الحقل هاد بس مكتوبة بعد أسطر فاضية (مثلاً "المصدر" وبعده
+                // سطرين فاضيين وبعدين اسم المصدر)، وسكر الحقل هون بيضيّع القيمة هاي بالكامل.
+                if (++blankRun >= 2 && field && !buf.length && m(cur)) {
+                    var hasFutureHeader = false;
+                    for (var lj = li + 1; lj < lines.length; lj++) if (lines[lj] && c(lines[lj])) { hasFutureHeader = true; break }
+                    if (!hasFutureHeader) field = null
+                }
+                continue;
             }
             blankRun = 0;
-            if (/^(?:-{3,}|_{3,}|={3,}|\*{3,})$/.test(raw)) return commitField(), void flushRecord();
-            if (/^(?:فيديو|مقطع|خام|Video|Clip|Raw)\s*\d+\s*[:：\-–]?\s*$/i.test(raw)) return commitField(), void flushRecord();
+            if (/^(?:-{3,}|_{3,}|={3,}|\*{3,})$/.test(raw)) { commitField(); flushRecord(); continue }
+            if (/^(?:فيديو|مقطع|خام|Video|Clip|Raw)\s*\d+\s*[:：\-–]?\s*$/i.test(raw)) { commitField(); flushRecord(); continue }
 
             var hdr = c(raw);
-            if (hdr) return void setField(hdr.key, hdr.val);
+            if (hdr) { setField(hdr.key, hdr.val); continue }
 
-            if (field) return void buf.push(raw);
+            if (field) { buf.push(raw); continue }
 
             // ما في عنوان حقل وما في حقل نشط: نسمح بس بالسطر الأول (أو أول أسطر) قبل أي حقل كعنوان رئيسي
             // (أسلوب قديم: عنوان بدون تسمية بأول السكربت). أي شي غير هيك بدون عنوان حقل، نتجاهله —
@@ -192,7 +201,8 @@
             if (!cur.title && !cur.subtitle && !cur.url && !cur.source && !cur.location) {
                 field = "title", buf = [raw]
             }
-        }), commitField(), flushRecord();
+        }
+        commitField(), flushRecord();
 
         return records.forEach(function (e) {
             null != e.from && null != e.to && e.to <= e.from && (e.to = null)
