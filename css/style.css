@@ -202,6 +202,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .dlfallback { flex-basis:100%; display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
 .dlfallback button.link { font-size:11px; }
 
+/* نافذة منبثقة لفشل تحميل فيديو — رفع من الجهاز أو تخطّي */
+.sb-dlfail-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; z-index:60; padding:16px; box-sizing:border-box; animation:sb-dlfail-in .15s ease-out; }
+@keyframes sb-dlfail-in { from { opacity:0 } to { opacity:1 } }
+.sb-dlfail-card { width:100%; max-width:360px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,.4); text-align:center; }
+.sb-dlfail-msg { margin:0 0 14px; font-size:14px; font-weight:700; color:var(--text); line-height:1.6; }
+.sb-dlfail-actions { display:flex; flex-direction:column; gap:8px; }
+.sb-dlfail-actions button { padding:10px 12px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; }
+.sb-dlfail-upload { background:var(--accent); color:var(--on-accent); }
+.sb-dlfail-upload:hover { filter:brightness(1.08); }
+.sb-dlfail-skip { background:var(--card2); color:var(--muted); border-color:var(--line); }
+.sb-dlfail-skip:hover { color:var(--text); border-color:var(--accent); }
+.sb-dlfail-alt { display:block; margin:12px auto 0; font-size:12px; }
+
 /* زر الترس وصندوق الإعدادات الموحّد */
 #sb-gear { flex:none; margin-inline-start:6px; width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:15px; cursor:pointer; line-height:1; }
 #sb-gear:hover { border-color:var(--accent); }

@@ -2676,6 +2676,40 @@
             }
         }, wrap.appendChild(b2)
     }
+    // نافذة منبثقة (بدل أزرار صغيرة تحت الرابط) تظهر فور تعذّر تحميل فيديو — سواء أثناء
+    // التحميل التلقائي بالخلفية بعد تحليل السكربت مباشرة، أو وقت الضغط على «ابنِ الخام».
+    // خيارين واضحين بس: ارفع الفيديو من جهازك، أو تخطّي ومتابعة بدون هذا الفيديو.
+    function sbDlFailModal(url, onUpload, onSkip) {
+        var old = document.querySelector(".sb-dlfail-overlay");
+        old && old.remove();
+        var plat = sbPlatformName(url),
+            fast = sbFastSites[plat],
+            ov = document.createElement("div");
+        ov.className = "sb-dlfail-overlay", ov.innerHTML = '<div class="sb-dlfail-card"><p class="sb-dlfail-msg">⚠ تعذّر تحميل الفيديو من الرابط' + (plat && "الفيديو" !== plat ? " (" + plat + ")" : "") + '</p><div class="sb-dlfail-actions"><button type="button" class="sb-dlfail-upload">⬆ ارفع الفيديو من جهازك</button><button type="button" class="sb-dlfail-skip">⏭ تخطّي</button></div>' + (fast ? '<button type="button" class="sb-dlfail-alt link">↗ جرّب تنزيل ' + plat + " من موقع آخر</button>" : "") + "</div>", document.body.appendChild(ov);
+
+        function close() {
+            ov.remove()
+        }
+        ov.querySelector(".sb-dlfail-skip").onclick = function() {
+            close(), onSkip && onSkip()
+        };
+        var altBtn = ov.querySelector(".sb-dlfail-alt");
+        altBtn && (altBtn.onclick = function() {
+            sbCopyText(url);
+            try {
+                Ct(fast)
+            } catch (e) {}
+        }), ov.querySelector(".sb-dlfail-upload").onclick = function() {
+            try {
+                var picked = b(!1, "اختر ملف الفيديو الذي نزّلته يدوياً", ["mp4", "mov", "mkv", "webm", "m4v", "avi"]);
+                sbForceRepaint(), picked && picked[0] ? (close(), onUpload && onUpload(picked[0])) : f("ما اخترت أي ملف (أُلغيت نافذة الاختيار).", "w")
+            } catch (errPick) {
+                sbForceRepaint(), f("تعذّر فتح نافذة اختيار الملف: " + String(errPick.message || errPick).slice(0, 200), "e")
+            }
+        }, ov.addEventListener("mousedown", function(e) {
+            e.target === ov && (close(), onSkip && onSkip())
+        })
+    }
     var Tt = {
         no: ["بدون تسجيل دخول", []],
         ff: ["بحساب فايرفوكس", ["--cookies-from-browser", "firefox"]],
@@ -4045,7 +4079,26 @@
                 // صندوق البطاقة بيخلي المحرر يفعّلها يدوياً لو نسي يكتبها بالسكربت.
                 rep: /الصوت\s*من\s*المصدر\s*الأصلي/.test(t.notes || "")
             }
-        }), re(), ke(), i("raw-state") && (i("raw-state").textContent = ne.clips.length ? "وجدت " + ne.clips.length + " فيديو. راجع البطاقات وعدّلها." : "لم أجد فيديو. أضف بطاقة يدوياً.")) : f("وحدة الخام غير محمّلة.", "e")
+        }), re(), ke(), i("raw-state") && (i("raw-state").textContent = ne.clips.length ? "وجدت " + ne.clips.length + " فيديو. راجع البطاقات وعدّلها." : "لم أجد فيديو. أضف بطاقة يدوياً.")) : f("وحدة الخام غير محمّلة.", "e");
+        sbAutoPrefetchRaw()
+    }
+
+    // نبدأ تنزيل فيديوهات البطاقات بالخلفية فوراً بعد تحليل السكربت (مش بعدين وقت الضغط
+    // على «ابنِ الخام») — هيك لما يوصل لزر البناء يكون التنزيل خلص (أو فشل وبانت رسالة
+    // التعذّر فوراً من هلق، قبل ما يضيّع وقت بمراجعة النصوص والرجوع يكتشف إن الفيديو ما نزل).
+    // Se() نفسها بتتحقق من الكاش أول شي، فـ«ابنِ الخام» لما يستدعيها بعدين رح يلاقي الفيديو
+    // جاهز مباشرة من غير تنزيل ثاني.
+    function sbAutoPrefetchRaw() {
+        ne.clips.forEach(function(t) {
+            t.url && !t.file && Se({
+                url: t.url,
+                from: t.from,
+                to: t.to,
+                _st: t._st,
+                pi: 1,
+                sub: ""
+            }).catch(function() {})
+        })
     }
 
     // زر "حذف النصوص" لوضع الخام: نولّده بالـ JS بدل index.html عشان ينتشر لكل
@@ -4266,7 +4319,7 @@
                     var joined = M.join(" | "),
                         hasCookieFile2 = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
                     if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
-                    sbDlBar(t._st, 0, !0), sbDlFallback(t._st, t.url, onManualPick);
+                    sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
                     throw new Error(joined)
                 }
                 C = A, l = !1
@@ -4289,7 +4342,7 @@
             if (!L || !e.existsSync(L)) {
                 var finalMsg = "لم يظهر الملف بعد التنزيل. " + String(C).replace(/\s+/g, " ").slice(-160);
                 /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(t.url) && (finalMsg += " — تيليغرام غالباً بيحتاج حجم الفيديو يكون أصغر من حد المعاينة (حوالي ٢٠ ميغا) حتى تقدر الأداة تشوفه بدون تسجيل دخول. لو الفيديو أكبر من هيك ما في طريقة آلية تجيبه — نزّله يدوياً من تطبيق تيليغرام نفسه وارفعه بزر «ارفع الفيديو من جهازك» تحت.");
-                sbDlBar(t._st, 0, !0), sbDlFallback(t._st, t.url, onManualPick);
+                sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
                 throw new Error(finalMsg)
             }
             var I = C.split("\n").filter(function(t) {
