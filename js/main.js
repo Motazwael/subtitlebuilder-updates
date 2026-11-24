@@ -3664,6 +3664,12 @@
     function ae(t) {
         return String(t || "").replace(/[.,،؛;:]/g, "").replace(/\s+/g, " ").trim()
     }
+    // اسم المصدر (حساب/قناة) أحياناً بيتكتب بعلامة "@" — القالب يلي بيعرضه عمودي (مدوّر)
+    // بيقلب موضعها بصرياً لو انحطّت بآخر الاسم (بتطلع "بالشقلوب")؛ لازم تكون قبل الاسم
+    // دايماً حتى تطلع صح بعد الدوران. منشيلها من أي مكان بالنص ومنحطها بالأول دايماً.
+    function sbFixHandleAt(s) {
+        return (s = String(s || "")), /@/.test(s) ? "@" + s.replace(/@/g, "").trim() : s
+    }
     // for title/subtitle text only: collapse whitespace and trim stray punctuation from the EDGES only —
     // unlike ae(), this keeps punctuation written on purpose inside the sentence (e.g. "لم تنفجر.. مسيرة")
     // instead of stripping every "." "," "،" "؛" ";" ":" wherever it appears.
@@ -4581,7 +4587,7 @@
                         title: H,
                         sub: $,
                         loc: ae(P.location),
-                        src: ae(P.source) || le(P.url),
+                        src: sbFixHandleAt(ae(P.source) || le(P.url)),
                         date: F
                     });
                 if (G && G.ok && G.found > 0) {
@@ -4648,7 +4654,7 @@
                                 o = me(n.title, d("raw-mxt", 22)),
                                 s = me(n.subtitle, d("raw-mxs", 20)),
                                 c = ae(n.location),
-                                l = ae(n.source) || le(n.url);
+                                l = sbFixHandleAt(ae(n.source) || le(n.url));
                             U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
                         } else f("فيديو " + (e + 1) + ": " + (t.error || "فشل"), "e")
                     }), tt)
@@ -4730,7 +4736,7 @@
                     title: me(t.title, d("raw-mxt", 22)),
                     sub: me(t.subtitle, d("raw-mxs", 20)),
                     loc: ae(t.location),
-                    src: ae(t.source) || le(t.url),
+                    src: sbFixHandleAt(ae(t.source) || le(t.url)),
                     date: ae(i("raw-date") && i("raw-date").value || "") || ue()
                 },
                 a = await m("sb_fillRaw", r);
