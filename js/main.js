@@ -2840,6 +2840,7 @@
                 var C = String(e.message || e).slice(0, 400),
                     hasCookieFile = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
                 if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(C)) C += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب: حمّل إضافة متصفح مثل «Get cookies.txt LOCALLY» وسجّل دخولك لإنستغرام فيها، صدّر ملف cookies.txt، وحدّده من حقل «ملف كوكيز» بإعدادات الخام — بيصير التنزيل مباشر بدون الاعتماد على فتح متصفحك.";
+                /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(t.url) && (C += " — تيليغرام غالباً بيحتاج حجم الفيديو يكون أصغر من حد المعاينة (حوالي ٢٠ ميغا) حتى تقدر الأداة تشوفه بدون تسجيل دخول. لو أكبر من هيك ما في طريقة آلية تجيبه — نزّله يدوياً من تطبيق تيليغرام وارفعه بزر «ارفع الفيديو من جهازك» تحت.");
                 if (a && a.parentNode) {
                     var M = a.parentNode.querySelector(".dlerr") || document.createElement("div");
                     M.className = "dlerr", M.style.cssText = "flex-basis:100%;font-size:11px;color:#ff8a80;direction:ltr;text-align:left;word-break:break-all", M.textContent = C, M.parentNode || a.parentNode.appendChild(M)
@@ -3929,7 +3930,7 @@
             };
             q(".rc-t").value = e.title || "", q(".rc-s").value = e.subtitle || "", q(".rc-url").value = e.url || "", q(".rc-src").value = e.source || "", q(".rc-loc").value = e.location || "", e.file && (q(".rc-st").textContent = "ملف محلي: " + r.basename(e.file));
             var pv = function() {
-                q(".pt").textContent = me(e.title, d("raw-mxt", 22)).join("  ⏎  "), q(".ps").textContent = me(e.subtitle, d("raw-mxs", 20), 1).join("  ⏎  ")
+                q(".pt").textContent = me(e.title, d("raw-mxt", 22)).join("  ⏎  "), q(".ps").textContent = me(e.subtitle, d("raw-mxs", 20)).join("  ⏎  ")
             };
             // shared fields: edits apply to every range that belongs to this same video
             var setAll = function(field, val) {
@@ -4219,7 +4220,12 @@
                 } catch (t) {}
                 L = j
             }
-            if (!L || !e.existsSync(L)) throw new Error("لم يظهر الملف بعد التنزيل. " + String(C).replace(/\s+/g, " ").slice(-160));
+            if (!L || !e.existsSync(L)) {
+                var finalMsg = "لم يظهر الملف بعد التنزيل. " + String(C).replace(/\s+/g, " ").slice(-160);
+                /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(t.url) && (finalMsg += " — تيليغرام غالباً بيحتاج حجم الفيديو يكون أصغر من حد المعاينة (حوالي ٢٠ ميغا) حتى تقدر الأداة تشوفه بدون تسجيل دخول. لو الفيديو أكبر من هيك ما في طريقة آلية تجيبه — نزّله يدوياً من تطبيق تيليغرام نفسه وارفعه بزر «ارفع الفيديو من جهازك» تحت.");
+                sbDlBar(t._st, 0, !0), sbDlFallback(t._st, t.url, onManualPick);
+                throw new Error(finalMsg)
+            }
             var I = C.split("\n").filter(function(t) {
                 return t.trim()
             }).length;
@@ -4348,7 +4354,7 @@
                     B = D ? D.start + D.dur : 0,
                     F = ae(i("raw-date") && i("raw-date").value || "") || ue(),
                     H = me(P.title, d("raw-mxt", 22)),
-                    $ = me(P.subtitle, d("raw-mxs", 20), 1),
+                    $ = me(P.subtitle, d("raw-mxs", 20)),
                     q = await xe(P.url),
                     R = d("raw-blue", NaN),
                     G = await m("sb_fillRaw", {
@@ -4427,7 +4433,7 @@
                                 a = t.start + t.dur,
                                 i = Math.min(r + Y, a),
                                 o = me(n.title, d("raw-mxt", 22)),
-                                s = me(n.subtitle, d("raw-mxs", 20), 1),
+                                s = me(n.subtitle, d("raw-mxs", 20)),
                                 c = ae(n.location),
                                 l = ae(n.source) || le(n.url);
                             U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
@@ -4509,7 +4515,7 @@
                     sw: Math.max(1, d("raw-sw", 5)),
                     end: 0,
                     title: me(t.title, d("raw-mxt", 22)),
-                    sub: me(t.subtitle, d("raw-mxs", 20), 1),
+                    sub: me(t.subtitle, d("raw-mxs", 20)),
                     loc: ae(t.location),
                     src: ae(t.source) || le(t.url),
                     date: ae(i("raw-date") && i("raw-date").value || "") || ue()
