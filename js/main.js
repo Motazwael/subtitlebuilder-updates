@@ -5426,7 +5426,9 @@
         if ("c" === k) { try { document.execCommand("copy"); } catch (e1) {} } else if ("x" === k) {
             try { document.execCommand("cut"); } catch (e2) {}
         } else if ("v" === k) {
-            try { document.execCommand("paste"); } catch (e3) {}
+            // لازم نمنع اللصق الافتراضي (native) بعد تنفيذ execCommand يدوياً، وإلا بتنفذ اللصقة
+            // مرتين (مرة يدوي ومرة تلقائي) ويتكرر/يتعجقن النص الملصوق بكل مكان بالواجهة.
+            try { if (document.execCommand("paste")) e.preventDefault(); } catch (e3) {}
         } else if ("a" === k) {
             var ae = document.activeElement;
             if (ae && ("INPUT" === ae.tagName || "TEXTAREA" === ae.tagName)) {
