@@ -2686,6 +2686,10 @@
             fast = sbFastSites[plat],
             ov = document.createElement("div");
         ov.className = "sb-dlfail-overlay", ov.innerHTML = '<div class="sb-dlfail-card"><p class="sb-dlfail-msg">⚠ تعذّر تحميل الفيديو من الرابط' + (plat && "الفيديو" !== plat ? " (" + plat + ")" : "") + '</p><div class="sb-dlfail-actions"><button type="button" class="sb-dlfail-upload">⬆ ارفع الفيديو من جهازك</button><button type="button" class="sb-dlfail-skip">⏭ تخطّي</button></div>' + (fast ? '<button type="button" class="sb-dlfail-alt link">↗ جرّب تنزيل ' + plat + " من موقع آخر</button>" : "") + "</div>", document.body.appendChild(ov);
+        // لو هالفشل صار بعد تحميل طويل بالخلفية (عطل CEP بإعادة الرسم المذكور فوق)، نفس
+        // المشكلة ممكن تمنع ظهور النافذة المنبثقة نفسها بصرياً رغم إنها انضافت فعلياً
+        // للصفحة — نجبر إعادة الرسم فوراً، وكمان بعد لحظة قصيرة للتأكيد.
+        sbForceRepaint(), setTimeout(sbForceRepaint, 50);
 
         function close() {
             ov.remove()
@@ -4089,15 +4093,27 @@
     // Se() نفسها بتتحقق من الكاش أول شي، فـ«ابنِ الخام» لما يستدعيها بعدين رح يلاقي الفيديو
     // جاهز مباشرة من غير تنزيل ثاني.
     function sbAutoPrefetchRaw() {
-        ne.clips.forEach(function(t) {
-            t.url && !t.file && Se({
+        var items = ne.clips.filter(function(t) {
+            return t.url && !t.file
+        });
+        if (!items.length) return;
+        var done = 0,
+            ok = 0;
+        items.forEach(function(t) {
+            Se({
                 url: t.url,
                 from: t.from,
                 to: t.to,
                 _st: t._st,
                 pi: 1,
                 sub: ""
-            }).catch(function() {})
+            }).then(function() {
+                ok++
+            }).catch(function() {}).then(function() {
+                // إشعار واضح لما يخلص التحميل بالخلفية — حتى يعرف المستخدم إنه جاهز
+                // يضغط «ابنِ الخام» من غير ما يحتاج يراقب شريط التحميل طول الوقت.
+                ++done === items.length && (ok === items.length ? f("✓ تحميل " + (items.length > 1 ? "كل الفيديوهات (" + items.length + ") خلص" : "الفيديو خلص") + " — جاهز تضغط «ابنِ الخام على التايم لاين».", "ok") : ok > 0 ? f("✓ " + ok + " من " + items.length + " فيديو جاهز للبناء؛ الباقي يحتاج منك اختيار (راجع الرسائل فوق).", "w") : f("تعذّر تحميل كل الفيديوهات تلقائياً — راجع الرسائل فوق لاختيار ملف من جهازك أو التخطّي.", "e"))
+            })
         })
     }
 
