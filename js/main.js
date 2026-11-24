@@ -2641,7 +2641,7 @@
     // محاولة تنزيل فاشلة أصلاً.
     function sbAgencyName(u) {
         u = String(u || "");
-        return /reutersconnect\.com/i.test(u) ? "رويترز كونكت" : /(?:^|\.)afp\.com/i.test(u) ? "وكالة فرانس برس (AFP)" : /newsroom\.ap\.org/i.test(u) ? "أسوشيتد برس (AP)" : /(?:^|\.)aa\.com\.tr/i.test(u) ? "الأناضول (AA)" : ""
+        return /reutersconnect\.com/i.test(u) ? "رويترز كونكت" : /(?:^|\.)afp\.com/i.test(u) ? "وكالة فرانس برس (AFP)" : /newsroom\.ap\.org/i.test(u) ? "أسوشيتد برس (AP)" : /(?:^|\.)aa\.com\.tr/i.test(u) ? "الأناضول (AA)" : /dpa-news\.de/i.test(u) ? "الوكالة الألمانية (DPA)" : /viory\.video/i.test(u) ? "Viory" : ""
     }
     function sbCopyText(t) {
         try {
