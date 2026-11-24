@@ -3665,10 +3665,14 @@
                     }), s = 0, c = 0; c < o.length && s < a; c++) {
                     var l = i[o[c]];
                     if (!(l.length < 4 || /ـ/.test(l)))
-                        for (var u = 1; u < l.length - 2; u++) {
+                        // نفحص من آخر الكلمة للبداية (مش العكس) عشان الكشيدة تنحط قريبة من
+                        // آخر الكلمة بدل أول موضع صالح بالبداية — هيك بيطلع شكلها أطبع وأقرب
+                        // لعادة الخط العربي. وبنستثني كل أشكال الألف (ا أ إ آ) بعد اللام عشان
+                        // ما نكسر لصقة «لا/لأ/لإ/لآ» (بتنكتب كحرف واحد مدمج بمعظم الخطوط).
+                        for (var u = l.length - 3; u >= 1; u--) {
                             var f = l.charAt(u),
                                 m = l.charAt(u + 1);
-                            if (!("بتثجحخسشصضطظعغفقكلمنهيئ".indexOf(f) < 0) && /[ء-ي]/.test(m) && ("ل" !== f || "ا" !== m)) {
+                            if (!("بتثجحخسشصضطظعغفقكلمنهيئ".indexOf(f) < 0) && /[ء-ي]/.test(m) && !("ل" === f && /[اأإآ]/.test(m))) {
                                 i[o[c]] = l.slice(0, u + 1) + "ـ" + l.slice(u + 1), s++;
                                 break
                             }
@@ -4123,12 +4127,20 @@
                 o = JSON.parse(p("sb.dlmap", "{}")) || {}
             } catch (t) {}
             var s = t.from,
-                c = t.to,
-                l = !(!i("raw-trim") || !i("raw-trim").checked) && null != s && null != c && c > s,
-                u = t.url + "#v" + Math.max(1, t.pi || 1) + (l ? "#" + s + "-" + c : "");
+                toSec = t.to,
+                l = !(!i("raw-trim") || !i("raw-trim").checked) && null != s && null != toSec && toSec > s,
+                u = t.url + "#v" + Math.max(1, t.pi || 1) + (l ? "#" + s + "-" + toSec : "");
+            // ملفات رفعها المستخدم يدوياً (زر «ارفع الفيديو من جهازك») هي الفيديو الكامل
+            // بدون أي قص — حتى لو هاد العنصر إله تايم كود (from/to)، لازم نرجّع trimmed:false
+            // حتى Ce() يطبّق التايم كود كنقطتي دخول/خروج على الكليب لما يحطّه بالتايم لاين،
+            // عوض ما يفترض غلط إن الملف المحفوظ متقصوص مسبقاً زي الملف يلي ينزل عادي بـ ffmpeg.
+            var untrimmedManual = {};
+            try {
+                untrimmedManual = JSON.parse(p("sb.dlmap.manual", "{}")) || {}
+            } catch (t) {}
             if (o[u] && e.existsSync(o[u])) return a("✓ موجود مسبقاً", "ok"), {
                 file: o[u],
-                trimmed: l
+                trimmed: l && !untrimmedManual[u]
             };
             var d = Date.now();
             a("أجهّز أداة التنزيل…");
@@ -4147,10 +4159,10 @@
             } catch (t) {}
             var x = Q(["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]);
             l && !x && (l = !1);
-            var k = l ? "-" + Math.round(s) + "s-" + Math.round(c) + "s" : "",
+            var k = l ? "-" + Math.round(s) + "s-" + Math.round(toSec) + "s" : "",
                 y = Math.max(1, t.pi || 1),
                 E = ["--playlist-items", String(y), "--no-warnings", "-o", r.join(b, "%(title).50B-%(id)s" + (y > 1 ? "-" + y : "") + k + ".%(ext)s"), "--print", "after_move:filepath"];
-            E = Bt(x).concat(E), l && (E = ["--download-sections", "*" + s + "-" + c, "--force-keyframes-at-cuts"].concat(E));
+            E = Bt(x).concat(E), l && (E = ["--download-sections", "*" + s + "-" + toSec, "--force-keyframes-at-cuts"].concat(E));
             var plat2 = sbPlatformName(t.url);
 
             async function onManualPick(filePath) {
@@ -4159,8 +4171,20 @@
                     a("جاري المعالجة…");
                     var fp = await Ft(filePath, x, a);
                     o[u] = fp, h("sb.dlmap", JSON.stringify(o));
-                    a("✓ تم حفظ الملف — اضغط «ابنِ الخام على التايم لاين» مرة ثانية لإكمال البناء", "ok");
-                    f("حُفظ الفيديو اللي رفعته يدوياً. اضغط ابنِ الخام على التايم لاين مرة ثانية لإكمال البناء بهذا الملف.", "ok")
+                    // الملف يلي رفعه المستخدم كامل وغير مقصوص — لو هذا العنصر إله تايم كود (from/to)
+                    // سجّل إنه "غير مقصوص" حتى يُطبَّق التايم كود كنقطتي دخول/خروج بالتايم لاين بدل
+                    // ما يُفترض غلط إنه متقصوص مسبقاً زي ملف نزل عادي وقصّه ffmpeg.
+                    try {
+                        var um = JSON.parse(p("sb.dlmap.manual", "{}")) || {}
+                    } catch (e9) { um = {} }
+                    um[u] = !0, h("sb.dlmap.manual", JSON.stringify(um));
+                    a("✓ تم حفظ الملف — أُكمل البناء تلقائياً الآن…", "ok");
+                    f("حُفظ الفيديو اللي رفعته يدوياً، وأُكمل البناء تلقائياً على التايم لاين الآن.", "ok");
+                    // نكمل البناء تلقائياً بدل ما نطلب من المستخدم يضغط الزر مرة ثانية — على نفس
+                    // السيكونس يلي كان شغّال عليه (لو كان فيه، حتى ما ننسخ قالب جديد مكرر).
+                    yt(function() {
+                        return Ce(c.rawLastSeqId)
+                    })
                 } catch (err) {
                     f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
                 }
@@ -4236,7 +4260,7 @@
             }
         })
     }
-    async function Ce() {
+    async function Ce(resumeSeqId) {
         !ne.clips.length && i("raw-url") && i("raw-url").value.trim() && !i("raw-text").value.trim() ? await Ee() : !ne.clips.length && i("raw-text").value.trim() && ye();
         var t = ne.clips.filter(function(t) {
             return t.url || t.file
@@ -4245,17 +4269,21 @@
             var e = "",
                 n = !1,
                 r = "";
-            if (i("raw-clone") && i("raw-clone").checked && i("raw-tpl") && i("raw-tpl").value) {
+            // استكمال تلقائي بعد «ارفع الفيديو من جهازك»: لو عندنا سيكونس شغلنا عليه من
+            // محاولة البناء السابقة (resumeSeqId)، نكمل عليه مباشرة بدل ما ننسخ قالب جديد
+            // مكرر — نسخ القالب مرة وحدة بس لكل محاولة بناء.
+            if (resumeSeqId) e = resumeSeqId, n = !1;
+            else if (i("raw-clone") && i("raw-clone").checked && i("raw-tpl") && i("raw-tpl").value) {
                 var a = t[0],
                     o = ae(a.title) || le(a.url) || "خام";
                 r = o.replace(/[\\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").trim().slice(0, 70);
                 var s = await m("sb_cloneSequence", i("raw-tpl").value, o, r);
                 if (!s || !s.ok) return void f("تعذّر نسخ سيكونس القالب، لم أغيّر شيئاً: " + (s && s.error || ""), "e");
                 r && f(s.bin ? "المجلد في المشروع: " + s.bin : "تعذّر إنشاء/نقل المجلد (" + (s.binErr || "") + "). السيكونس موجود في جذر المشروع.", s.bin ? "ok" : "w"), f("أنشأت سيكونساً جديداً باسم: " + s.name + (s.active ? "" : " (افتحه من لوحة المشروع إن لم يفتح تلقائياً)"), "ok");
-                for (var c = !1, u = 0; u < 20 && !c; u++) {
+                for (var seqActivated = !1, u = 0; u < 20 && !seqActivated; u++) {
                     var h = await m("sb_activeSeq");
                     if (h && h.ok && h.id === s.id) {
-                        c = !0;
+                        seqActivated = !0;
                         break
                     }
                     if (3 === u || 10 === u) try {
@@ -4265,8 +4293,17 @@
                         setTimeout(t, 500)
                     })
                 }
-                if (!c) return void f("النسخة الجديدة «" + s.name + "» لم تصبح السيكونس النشط. افتحها (نقر مزدوج في لوحة المشروع) ثم اضغط ابنِ مرة ثانية مع إطفاء «انسخ القالب».", "e");
+                if (!seqActivated) return void f("النسخة الجديدة «" + s.name + "» لم تصبح السيكونس النشط. افتحها (نقر مزدوج في لوحة المشروع) ثم اضغط ابنِ مرة ثانية مع إطفاء «انسخ القالب».", "e");
                 e = s.id, n = !0
+            }
+            // نحفظ السيكونس يلي اشتغلنا عليه الآن — حتى لو فشل تنزيل فيديو ورفعه المستخدم
+            // يدوياً بعدين، الاستكمال التلقائي (Ce(resumeSeqId)) يعرف يرجع لنفس السيكونس
+            // بالضبط بدل ما ينسخ قالب جديد مكرر.
+            if (!resumeSeqId) try {
+                var curActiveSeq = e ? null : await m("sb_activeSeq");
+                c.rawLastSeqId = e || (curActiveSeq && curActiveSeq.ok ? curActiveSeq.id : null)
+            } catch (eA) {
+                c.rawLastSeqId = e || null
             }
             var p = Math.max(1, Math.round(d("raw-vtrack", 1))),
                 v = Math.max(1, Math.round(d("raw-mtrack", 16))),
