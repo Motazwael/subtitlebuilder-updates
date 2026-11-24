@@ -2602,6 +2602,15 @@
             })
         })
     }
+    // إجبار اللوحة ترسم نفسها من جديد فوراً — عطل معروف بلوحات CEP إنه بعد إغلاق نافذة
+    // نظام تشغيل أصلية (زي اختيار ملف)، أحياناً الرسم ما يتحدّث لحد ما يصير أي حدث
+    // (تحريك الفأرة، تغيير حجم..). تبديل zoom بقيمة متناهية الصغر إجباري ومضمون.
+    function sbForceRepaint() {
+        try {
+            var z = document.body.style.zoom;
+            document.body.style.zoom = "99.9999%", void document.body.offsetHeight, document.body.style.zoom = z || "100%"
+        } catch (e) {}
+    }
     // شريط تقدّم بصري بسيط (نفس كلاس .pbar/.pbar-fill المستخدم لتثبيت نموذج المحاذاة) —
     // بينحط تلقائياً جنب أي عنصر حالة تنزيل، وبيتحدّث مع كل نسبة جديدة توصل من jt().
     function sbDlBar(el, pct, done) {
@@ -2656,9 +2665,14 @@
             // الكل بمحاولة واضحة ونعرض أي نتيجة (نجاح، إلغاء، أو خطأ) برسالة حقيقية.
             try {
                 var picked = b(!1, "اختر ملف الفيديو الذي نزّلته يدوياً", ["mp4", "mov", "mkv", "webm", "m4v", "avi"]);
+                // عطل معروف بلوحات CEP: بعد ما تنغلق نافذة اختيار ملف نظام التشغيل،
+                // أحياناً اللوحة ما ترسم نفسها من جديد (أي تحديث بالـ DOM بيصير فعلياً
+                // بالذاكرة بس ما بيبان على الشاشة) لحد ما يصير أي حدث يجبرها ترسم.
+                // هالحيلة (zoom مؤقت) تجبر محرّك الرسم يحدّث الشاشة فوراً.
+                sbForceRepaint();
                 picked && picked[0] ? onPick && onPick(picked[0]) : f("ما اخترت أي ملف (أُلغيت نافذة الاختيار).", "w")
             } catch (errPick) {
-                f("تعذّر فتح نافذة اختيار الملف: " + String(errPick.message || errPick).slice(0, 200), "e")
+                sbForceRepaint(), f("تعذّر فتح نافذة اختيار الملف: " + String(errPick.message || errPick).slice(0, 200), "e")
             }
         }, wrap.appendChild(b2)
     }
@@ -4193,6 +4207,7 @@
             var plat2 = sbPlatformName(t.url);
 
             async function onManualPick(filePath) {
+                sbForceRepaint();
                 try {
                     if (!filePath || !e.existsSync(filePath)) return void f("الملف غير موجود.", "e");
                     a("جاري المعالجة…");
@@ -4211,9 +4226,9 @@
                     // السيكونس يلي كان شغّال عليه (لو كان فيه، حتى ما ننسخ قالب جديد مكرر).
                     yt(function() {
                         return Ce(c.rawLastSeqId)
-                    })
+                    }).then(sbForceRepaint)
                 } catch (err) {
-                    f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
+                    sbForceRepaint(), f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
                 }
             }
             var S = It(t.url),
