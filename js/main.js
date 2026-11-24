@@ -3718,7 +3718,13 @@
                             c = Math.max.apply(null, i),
                             l = Math.min.apply(null, i);
                         fe.test(r[r.length - 1][r[r.length - 1].length - 1]);
-                        var u = 100 * c + (c - l);
+                        // هوية بصرية موحّدة للأسطر: نفضّل تدرّج أطوال الأسطر بشكل هرمي
+                        // ثابت الاتجاه (كل سطر دايماً أطول أو دايماً أقصر من يلي قبله —
+                        // من فوق لتحت أو العكس، أيّهما أنضف) بدل ترتيب عشوائي للأطوال.
+                        // تفضيل ثانوي بس — وزنه أصغر بكتير من وزن أطول سطر (١٠٠) حتى ما
+                        // يضحّي بسطر يطفح برا صندوق النص بس عشان يطلع هرمي.
+                        for (var incBreaks = 0, decBreaks = 0, mi = 1; mi < i.length; mi++) i[mi] < i[mi - 1] ? incBreaks++ : i[mi] > i[mi - 1] && decBreaks++;
+                        var u = 100 * c + (c - l) + 20 * Math.min(incBreaks, decBreaks);
                         u < s && (s = u, o = r)
                     } else
                         for (var f = e + 1; f <= a.length - (n - 1); f++) fe.test(a[f - 1]) || t(f, n - 1, r.concat([a.slice(e, f)]))
