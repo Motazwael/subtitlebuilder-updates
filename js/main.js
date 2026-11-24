@@ -2650,6 +2650,15 @@
         u = String(u || "");
         return /reutersconnect\.com/i.test(u) ? "رويترز كونكت" : /(?:^|\.)afp\.com/i.test(u) ? "وكالة فرانس برس (AFP)" : /newsroom\.ap\.org/i.test(u) ? "أسوشيتد برس (AP)" : /(?:^|\.)aa\.com\.tr/i.test(u) ? "الأناضول (AA)" : /dpa-news\.de/i.test(u) ? "الوكالة الألمانية (DPA)" : /viory\.video/i.test(u) ? "Viory" : ""
     }
+    // روابط جوجل درايف ما بيفهمها yt-dlp إطلاقاً (مش منصة فيديوهات)، فمحاولة تمريرها لأداة
+    // التنزيل العادية هي مضيعة وقت أكيدة الفشل. نتعرّف على رابط درايف ونطلع معرّف الملف منه
+    // (بيدعم كل الصيغ الشائعة لمشاركة الروابط من درايف) لنحمّله بطريقة خاصة فيه (Gt).
+    function sbGDriveId(u) {
+        u = String(u || "");
+        if (!/drive\.google\.com|docs\.google\.com/i.test(u)) return "";
+        var m = /\/file\/d\/([\w-]{10,})/.exec(u) || /[?&]id=([\w-]{10,})/.exec(u) || /\/d\/([\w-]{10,})/.exec(u);
+        return m ? m[1] : ""
+    }
     function sbCopyText(t) {
         try {
             var ta = document.createElement("textarea");
@@ -2780,6 +2789,80 @@
         }
         var p = r.join(e, c);
         return await At(s, p, 0, onProg), p
+    }
+    // تنزيل مباشر من جوجل درايف. الملفات الصغيرة بترجع مباشرة، بس الملفات الكبيرة (أو أي
+    // ملف جوجل حاطة عليه "تحذير فحص فيروسات") بترجع صفحة HTML فيها رمز "confirm" لازم
+    // نعيد الطلب فيه (مع نفس الكوكيز يلي رجعت بالرد الأول) حتى يعطينا الملف الحقيقي.
+    // هاد الأسلوب هو نفسه المعتمد بأدوات تنزيل جوجل درايف المعروفة (زي gdown)، بس ممكن
+    // جوجل تغيّر شكل صفحة التحذير من وقت لوقت — إذا صار هيك لازم نراجع الـ regex تحت.
+    function Gt(gid, destDir, n, a, stEl) {
+        return new Promise(function(resolve, reject) {
+            var https = require("https"),
+                cookies = [],
+                dest = r.join(destDir, "gdrive-" + gid + (n > 1 ? "-" + n : "") + ".mp4"),
+                onProg = function(pct) {
+                    a && a("جاري التنزيل… Google Drive — " + pct + "٪"), sbDlBar(stEl, pct)
+                };
+
+            function addCookies(res) {
+                var sc = res.headers["set-cookie"];
+                sc && (cookies = cookies.concat(sc.map(function(c) {
+                    return c.split(";")[0]
+                })))
+            }
+
+            function finishDownload(res) {
+                var total = parseInt(res.headers["content-length"], 10) || 0,
+                    got = 0,
+                    lastPct = -1;
+                onProg(0);
+                res.on("data", function(chunk) {
+                    got += chunk.length;
+                    var pct = total > 0 ? Math.min(99, Math.floor(got / total * 100)) : Math.min(90, Math.floor(Math.log(got / 1e6 + 1) / Math.log(100) * 90));
+                    pct !== lastPct && (lastPct = pct, onProg(pct))
+                });
+                var tmp = dest + ".part",
+                    ws = e.createWriteStream(tmp);
+                res.pipe(ws), ws.on("finish", function() {
+                    onProg(100), ws.close(function() {
+                        try {
+                            e.renameSync(tmp, dest), resolve(dest)
+                        } catch (err) {
+                            reject(err)
+                        }
+                    })
+                }), ws.on("error", reject)
+            }
+            var urlModule = require("url");
+
+            function get(u, depth) {
+                if (depth > 8) return reject(new Error("جوجل درايف: تحويلات كثيرة."));
+                https.get(u, {
+                    headers: {
+                        "User-Agent": "Mozilla/5.0",
+                        Cookie: cookies.join("; ")
+                    }
+                }, function(res) {
+                    addCookies(res);
+                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return res.resume(), get(new urlModule.URL(res.headers.location, u).href, depth + 1);
+                    if (200 !== res.statusCode) return res.resume(), reject(new Error("جوجل درايف: HTTP " + res.statusCode));
+                    var ctype = String(res.headers["content-type"] || "");
+                    if (!/text\/html/i.test(ctype)) return finishDownload(res);
+                    var body = "";
+                    res.on("data", function(c) {
+                        body += c
+                    }), res.on("end", function() {
+                        var dl = /"downloadUrl":"([^"]+)"/.exec(body),
+                            cf = /confirm=([0-9A-Za-z_-]+)/.exec(body) || /name="confirm"\s+value="([^"]+)"/.exec(body),
+                            notFound = /not been able to confirm|exceeded|quota|غير متاح|not found|permission/i.test(body);
+                        if (dl) return get(dl[1].replace(/\\u003d/g, "=").replace(/\\u0026/g, "&").replace(/\\\//g, "/"), depth + 1);
+                        if (cf) return get("https://drive.usercontent.google.com/download?id=" + gid + "&export=download&confirm=" + cf[1], depth + 1);
+                        reject(new Error(notFound ? "جوجل درايف: الملف غير متاح للجميع — تأكد إن صلاحية المشاركة «أي شخص لديه الرابط»." : "جوجل درايف: ما قدرت أتجاوز صفحة التحذير (شكل الصفحة تغيّر عند جوجل)."))
+                    })
+                }).on("error", reject)
+            }
+            get("https://drive.google.com/uc?export=download&id=" + gid, 0)
+        })
     }
 
     function Dt(t) {
@@ -4345,6 +4428,39 @@
                 sbDlBar(t._st, 0, !0);
                 sbDlFailModal(t.url, onManualPick, function() {}, "⛔ هذا الرابط من " + agencyName + " ويحتاج تسجيل دخول بحساب مشترك بالوكالة — ما بقدر أحمّله تلقائياً.<br>نزّل الفيديو من حسابك على " + agencyName + " وارفعه من هون.");
                 throw new Error("رابط " + agencyName + " يحتاج تسجيل دخول — نزّله من حسابك وارفعه يدوياً.")
+            }
+            // رابط جوجل درايف (أحياناً المحرر بيضيف رابط درايف بدل رابط منصة تواصل) — yt-dlp
+            // ما بيفهم جوجل درايف إطلاقاً فمحاولة تمريره له مضمونة تفشل، فنتعرّف عليه فوراً
+            // ونحمّله بطريقة خاصة (Gt) تتجاوز أداة التنزيل العادية بالكامل.
+            var gdriveId = sbGDriveId(t.url);
+            if (gdriveId) {
+                try {
+                    a("أجهّز مجلد التنزيل…");
+                    var gInfo = null;
+                    try {
+                        gInfo = await m("sb_info")
+                    } catch (t) {}
+                    var gw = gInfo && gInfo.ok && gInfo.projectPath ? r.dirname(gInfo.projectPath) : "",
+                        gb = gw ? r.join(gw, "01_Video") : r.join(n.homedir(), "Downloads", "SubtitleBuilder_Materials");
+                    t.sub && (gb = r.join(gb, t.sub));
+                    try {
+                        e.mkdirSync(gb, {
+                            recursive: !0
+                        })
+                    } catch (t) {}
+                    var gy = Math.max(1, t.pi || 1);
+                    a("جاري التنزيل… Google Drive");
+                    var gFile = await Gt(gdriveId, gb, gy, a, t._st);
+                    return gFile = await Ft(gFile, x, a), o[u] = gFile, h("sb.dlmap", JSON.stringify(o)), sbDlBar(t._st, 0, !0), a("✓ نُزّل", "ok"), {
+                        file: gFile,
+                        trimmed: l,
+                        bin: gw ? "01_Video" : ""
+                    }
+                } catch (gErr) {
+                    modalShown = !0, sbDlBar(t._st, 0, !0);
+                    sbDlFailModal(t.url, onManualPick, function() {}, "⚠ تعذّر تحميل الفيديو من جوجل درايف تلقائياً: " + String(gErr && (gErr.message || gErr)).slice(0, 200) + "<br>تأكد إن صلاحية مشاركة الملف «أي شخص لديه الرابط» (مش محصورة بأشخاص معيّنين)، ثم أعد المحاولة، أو ارفع الفيديو من جهازك مباشرة.");
+                    throw new Error("جوجل درايف: " + String(gErr && (gErr.message || gErr)).slice(0, 200))
+                }
             }
             try {
             var d = Date.now();
