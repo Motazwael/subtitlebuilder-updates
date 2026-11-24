@@ -2634,6 +2634,15 @@
         "تويتر/X": "https://twittervideodownloader.com/",
         "تيك توك": "https://ssstik.io/"
     };
+    // وكالات الأخبار يلي بتتطلب تسجيل دخول بحساب مشترك (رويترز كونكت، AFP، AP، الأناضول) —
+    // روابطها دايماً بتفشل مع yt-dlp ومع كل البدائل (مافي حساب "عام" نقدر نستخدمه)، فمحاولة
+    // تنزيلها تلقائياً مجرد مضيعة وقت وبتطلع رسائل خطأ غامضة (401/تسجيل دخول...) تلخبط المستخدم.
+    // بدل هيك، نتعرّف عليها فوراً من الرابط ونطلب رفع الملف يدوياً من اللحظة الأولى، بدون أي
+    // محاولة تنزيل فاشلة أصلاً.
+    function sbAgencyName(u) {
+        u = String(u || "");
+        return /reutersconnect\.com/i.test(u) ? "رويترز كونكت" : /(?:^|\.)afp\.com/i.test(u) ? "وكالة فرانس برس (AFP)" : /newsroom\.ap\.org/i.test(u) ? "أسوشيتد برس (AP)" : /(?:^|\.)aa\.com\.tr/i.test(u) ? "الأناضول (AA)" : ""
+    }
     function sbCopyText(t) {
         try {
             var ta = document.createElement("textarea");
@@ -2679,13 +2688,14 @@
     // نافذة منبثقة (بدل أزرار صغيرة تحت الرابط) تظهر فور تعذّر تحميل فيديو — سواء أثناء
     // التحميل التلقائي بالخلفية بعد تحليل السكربت مباشرة، أو وقت الضغط على «ابنِ الخام».
     // خيارين واضحين بس: ارفع الفيديو من جهازك، أو تخطّي ومتابعة بدون هذا الفيديو.
-    function sbDlFailModal(url, onUpload, onSkip) {
+    function sbDlFailModal(url, onUpload, onSkip, customMsg) {
         var old = document.querySelector(".sb-dlfail-overlay");
         old && old.remove();
         var plat = sbPlatformName(url),
-            fast = sbFastSites[plat],
+            fast = customMsg ? null : sbFastSites[plat],
+            msg = customMsg || "⚠ تعذّر تحميل الفيديو من الرابط" + (plat && "الفيديو" !== plat ? " (" + plat + ")" : ""),
             ov = document.createElement("div");
-        ov.className = "sb-dlfail-overlay", ov.innerHTML = '<div class="sb-dlfail-card"><p class="sb-dlfail-msg">⚠ تعذّر تحميل الفيديو من الرابط' + (plat && "الفيديو" !== plat ? " (" + plat + ")" : "") + '</p><div class="sb-dlfail-actions"><button type="button" class="sb-dlfail-upload">⬆ ارفع الفيديو من جهازك</button><button type="button" class="sb-dlfail-skip">⏭ تخطّي</button></div>' + (fast ? '<button type="button" class="sb-dlfail-alt link">↗ جرّب تنزيل ' + plat + " من موقع آخر</button>" : "") + "</div>", document.body.appendChild(ov);
+        ov.className = "sb-dlfail-overlay", ov.innerHTML = '<div class="sb-dlfail-card"><p class="sb-dlfail-msg">' + msg + '</p><div class="sb-dlfail-actions"><button type="button" class="sb-dlfail-upload">⬆ ارفع الفيديو من جهازك</button><button type="button" class="sb-dlfail-skip">⏭ تخطّي</button></div>' + (fast ? '<button type="button" class="sb-dlfail-alt link">↗ جرّب تنزيل ' + plat + " من موقع آخر</button>" : "") + "</div>", document.body.appendChild(ov);
         // لو هالفشل صار بعد تحميل طويل بالخلفية (عطل CEP بإعادة الرسم المذكور فوق)، نفس
         // المشكلة ممكن تمنع ظهور النافذة المنبثقة نفسها بصرياً رغم إنها انضافت فعلياً
         // للصفحة — نجبر إعادة الرسم فوراً، وكمان بعد لحظة قصيرة للتأكيد.
@@ -4291,6 +4301,17 @@
                 } catch (err) {
                     sbForceRepaint(), f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
                 }
+            }
+            // روابط وكالات الأخبار (رويترز كونكت/AFP/AP/الأناضول) بتحتاج تسجيل دخول بحساب
+            // مشترك ما منقدر نستخدمه تلقائياً — أي محاولة تنزيل لها مضمونة تفشل وبتضيّع وقت
+            // وتطلع رسائل خطأ غامضة. نتعرّف عليها فوراً ونطلب الرفع اليدوي من أول لحظة.
+            var agencyName = sbAgencyName(t.url);
+            if (agencyName) {
+                modalShown = !0;
+                a("⛔ يحتاج تسجيل دخول (" + agencyName + ")");
+                sbDlBar(t._st, 0, !0);
+                sbDlFailModal(t.url, onManualPick, function() {}, "⛔ هذا الرابط من " + agencyName + " ويحتاج تسجيل دخول بحساب مشترك بالوكالة — ما بقدر أحمّله تلقائياً.<br>نزّل الفيديو من حسابك على " + agencyName + " وارفعه من هون.");
+                throw new Error("رابط " + agencyName + " يحتاج تسجيل دخول — نزّله من حسابك وارفعه يدوياً.")
             }
             try {
             var d = Date.now();
