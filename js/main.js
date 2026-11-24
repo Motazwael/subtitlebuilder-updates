@@ -5521,6 +5521,8 @@
 // + ترجمة كاملة للواجهة للإنجليزي — نبنيها بالكامل بالـ JS (مش بتعديل index.html) عشان تنتشر
 // تلقائياً لكل النسخ المركّبة عن طريق التحديث البعيد (index.html ما بينحدّث عن بعد أبداً، بقصد،
 // حتى ما يكسر أي نسخة مخصصة زي كيمو — شايفه بتعليق js/updater.js).
+// كل إعدادات كل وضع صارت تفاصيل (details) مطوية افتراضياً جوا تبويبها — عشان الصندوق يضل
+// مختصر وخفيف، مش قائمة طويلة مفتوحة كلها دفعة وحدة.
 !function () {
     "use strict";
     if (window.__sbSettingsUI) return;
@@ -5572,14 +5574,14 @@
         }
     });
 
-    // نقل الإعدادات المبعثرة من كل وضع إلى الصندوق الموحّد — appendChild بينقل العنصر
-    // الحقيقي (مش نسخة)، فكل أحداث main.js المربوطة عليه (oninput/onclick) تضل شغالة
-    // بالضبط متل ما هي، بس بمكان عرض جديد.
-    function unwrapInto(details, panel) {
+    // ننقل العنصر (details) الأصلي بكل ما فيه لتبويبه بالصندوق، بدون ما نفكّكه — فيضل
+    // مطوي (مغلق) افتراضياً كسطر واحد قصير، وكل أحداث main.js المربوطة على عناصره الداخلية
+    // تضل شغالة زي ما هي لأنه appendChild بينقل العقدة الحقيقية مش نسخة عنها.
+    function moveCollapsed(details, panel, label) {
         if (!details || !panel) return;
-        Array.prototype.slice.call(details.children).forEach(function (k) {
-            "SUMMARY" !== k.tagName && panel.appendChild(k)
-        }), details.parentNode && details.parentNode.removeChild(details)
+        details.open = !1;
+        var sum = details.querySelector(":scope > summary");
+        sum && label && (sum.textContent = label), panel.appendChild(details)
     }
     try {
         var vgAdv = document.querySelector("#view-vg > details.adv");
@@ -5590,17 +5592,22 @@
             keepWrap.id = "vg-adv-keep";
             Array.prototype.slice.call(vgAdv.children).forEach(function (k) {
                 k !== vgGrid && "SUMMARY" !== k.tagName && keepWrap.appendChild(k)
-            }), vgGrid && vgPanel.appendChild(vgGrid), vgAdv.parentNode.insertBefore(keepWrap, vgAdv), vgAdv.parentNode.removeChild(vgAdv)
+            });
+            if (vgGrid) {
+                var vgDetails = document.createElement("details");
+                vgDetails.className = "adv", vgDetails.innerHTML = "<summary>إعدادات الفيديوغراف</summary>", vgDetails.appendChild(vgGrid), vgPanel.appendChild(vgDetails)
+            }
+            vgAdv.parentNode.insertBefore(keepWrap, vgAdv), vgAdv.parentNode.removeChild(vgAdv)
         }
     } catch (e) {}
     try {
         var rawAdv = document.querySelector("#view-raw details.adv");
-        rawAdv && unwrapInto(rawAdv, overlay.querySelector('.sb-tab-panel[data-panel="raw"]'))
+        rawAdv && moveCollapsed(rawAdv, overlay.querySelector('.sb-tab-panel[data-panel="raw"]'), "إعدادات الخام")
     } catch (e) {}
     try {
         var qDetails = document.querySelectorAll("#view-quote details");
-        qDetails[0] && unwrapInto(qDetails[0], overlay.querySelector('.sb-tab-panel[data-panel="quote"]')),
-        qDetails[1] && unwrapInto(qDetails[1], overlay.querySelector('.sb-tab-panel[data-panel="quote"]'))
+        qDetails[0] && moveCollapsed(qDetails[0], overlay.querySelector('.sb-tab-panel[data-panel="quote"]'), "إعدادات الاقتباس"),
+        qDetails[1] && moveCollapsed(qDetails[1], overlay.querySelector('.sb-tab-panel[data-panel="quote"]'), "تحقّق بالذكاء الاصطناعي")
     } catch (e) {}
 
     var SB_EN = {
