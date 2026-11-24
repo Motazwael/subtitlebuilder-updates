@@ -2503,12 +2503,19 @@
                 // تيليغرام/إكس ما إلهم شريط تقدّم من yt-dlp (تنزيل مباشر بـ https.get)، فنحسبه
                 // يدوياً من content-length لو موجود حتى يبان شريط أخضر ونسبة مئوية زي باقي
                 // المنصات، عوض ما تضل رسالة "جاري التنزيل…" ثابتة بدون أي مؤشر تقدّم.
+                // ملاحظة مهمة: روابط إكس/X (وأحياناً تيليغرام) بتوصل غالباً من سيرفر الـCDN
+                // بتحويلة/تدفّق (streaming) بدون هيدر content-length أصلاً — قبل هيك كان
+                // الشريط ما بيظهر إطلاقاً بهالحالة (الشرط total>0 كان بيمنع حتى إنشاءه).
+                // هلأ منظهر الشريط فوراً بمجرد ما يوصل الرد (0٪)، وإذا الحجم الكلي معروف
+                // منحسب نسبة حقيقية، وإذا مش معروف منقدّر تقدّم تقريبي متحرّك من حجم البيانات
+                // يلي وصلت لهلق (منحنى بيتباطأ قرب ٩٠٪) حتى يبين الشريط شغّال وما تجمّد.
                 var total = parseInt(t.headers["content-length"], 10) || 0,
                     got = 0,
                     lastPct = -1;
-                onProgress && total > 0 && t.on("data", function(chunk) {
+                onProgress && onProgress(0);
+                onProgress && t.on("data", function(chunk) {
                     got += chunk.length;
-                    var pct = Math.min(99, Math.floor(got / total * 100));
+                    var pct = total > 0 ? Math.min(99, Math.floor(got / total * 100)) : Math.min(90, Math.floor(Math.log(got / 1e6 + 1) / Math.log(100) * 90));
                     pct !== lastPct && (lastPct = pct, onProgress(pct))
                 });
                 var o = n + ".part",
