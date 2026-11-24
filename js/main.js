@@ -5647,6 +5647,7 @@
         '<div id="sb-settings-body">' +
         '<div class="sb-tab-panel" data-panel="gen">' +
         '<div id="sb-settings-credit"><p class="muted">المطوّر</p><p id="sb-dev-name">Motaz Wael</p></div>' +
+        '<div id="sb-settings-ver"><p class="muted" id="sb-ver-label">رقم الإصدار</p><p id="sb-ver-num">—</p></div>' +
         '<div id="sb-settings-lang"><p class="muted" id="sb-lang-label">لغة الواجهة</p>' +
         '<div id="sb-lang-btns"><button type="button" data-lang="ar" class="on">العربية</button><button type="button" data-lang="en">English</button></div>' +
         "</div>" +
@@ -5657,6 +5658,20 @@
         "</div>" +
         "</div>";
     document.body.appendChild(overlay);
+
+    // رقم الإصدار الحالي: منقرأه من update-state.json (يلي بيحدّثه js/updater.js
+    // بعد كل تحديث ناجح) حتى يبان بالإعدادات بدون ما نحتاج نكتبه يدوياً بكل نسخة.
+    !function () {
+        try {
+            var csiV = new CSInterface, fsV = require("fs");
+            var rootV = csiV.getSystemPath(SystemPath.EXTENSION);
+            if (!rootV) return;
+            var sfV = String(rootV).replace(/\\/g, "/") + "/update-state.json";
+            var jV = JSON.parse(fsV.readFileSync(sfV, "utf8"));
+            var vEl = document.getElementById("sb-ver-num");
+            if (vEl && jV && jV.version) vEl.textContent = jV.version;
+        } catch (eV) {}
+    }();
 
     function openModal() { overlay.hidden = !1 }
 
@@ -5949,6 +5964,7 @@
         "لغة الواجهة": "Interface language",
         "العربية": "Arabic",
         "المطوّر": "Developer",
+        "رقم الإصدار": "Version",
         "عام": "General",
     };
 

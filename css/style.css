@@ -224,8 +224,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sb-tab-panel details > summary + * { margin-top:10px; }
 .sb-tab-panel details > *:last-child { margin-bottom:12px; }
 #vg-adv-keep { margin-top:6px; }
-#sb-settings-credit, #sb-settings-lang { padding:10px 0; border-bottom:1px solid var(--line); }
+#sb-settings-credit, #sb-settings-ver, #sb-settings-lang { padding:10px 0; border-bottom:1px solid var(--line); }
 #sb-dev-name { margin:2px 0 0; font-weight:700; letter-spacing:.08em; direction:ltr; text-align:right; color:var(--accent); }
+#sb-ver-num { margin:2px 0 0; font-weight:700; letter-spacing:.04em; direction:ltr; text-align:right; color:var(--muted); }
 #sb-lang-btns { display:flex; gap:6px; margin-top:6px; }
 #sb-lang-btns button { flex:1; padding:7px 4px; font-size:12px; font-weight:600; color:var(--muted); background:var(--card2); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
 #sb-lang-btns button.on { color:var(--on-accent); background:var(--accent); border-color:var(--accent); }

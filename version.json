@@ -1,10 +1,10 @@
 {
-  "version": "1.7.27",
+  "version": "1.7.28",
   "notes": "تحسينات وإصلاحات",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
-    "js/raw.js","js/quote.js","js/main.js","jsx/host.jsx","css/style.css"
+    "js/raw.js","js/quote.js","js/main.js","js/updater.js","jsx/host.jsx","css/style.css"
   ],
   "optionalFiles": [
     "css/kimo.css",
