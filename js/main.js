@@ -2490,7 +2490,7 @@
     };
     var _t = r.join(n.homedir(), ".subtitlebuilder", "bin", "win32" === process.platform ? "yt-dlp.exe" : "yt-dlp");
 
-    function At(t, n, r) {
+    function At(t, n, r, onProgress) {
         return new Promise(function(a, i) {
             if ((r = r || 0) > 6) return i(new Error("تحويلات كثيرة"));
             require("https").get(t, {
@@ -2498,12 +2498,23 @@
                     "User-Agent": "Mozilla/5.0"
                 }
             }, function(t) {
-                if (t.statusCode >= 300 && t.statusCode < 400 && t.headers.location) return t.resume(), At(t.headers.location, n, r + 1).then(a, i);
+                if (t.statusCode >= 300 && t.statusCode < 400 && t.headers.location) return t.resume(), At(t.headers.location, n, r + 1, onProgress).then(a, i);
                 if (200 !== t.statusCode) return t.resume(), i(new Error("HTTP " + t.statusCode));
+                // تيليغرام/إكس ما إلهم شريط تقدّم من yt-dlp (تنزيل مباشر بـ https.get)، فنحسبه
+                // يدوياً من content-length لو موجود حتى يبان شريط أخضر ونسبة مئوية زي باقي
+                // المنصات، عوض ما تضل رسالة "جاري التنزيل…" ثابتة بدون أي مؤشر تقدّم.
+                var total = parseInt(t.headers["content-length"], 10) || 0,
+                    got = 0,
+                    lastPct = -1;
+                onProgress && total > 0 && t.on("data", function(chunk) {
+                    got += chunk.length;
+                    var pct = Math.min(99, Math.floor(got / total * 100));
+                    pct !== lastPct && (lastPct = pct, onProgress(pct))
+                });
                 var o = n + ".part",
                     s = e.createWriteStream(o);
                 t.pipe(s), s.on("finish", function() {
-                    s.close(function() {
+                    onProgress && onProgress(100), s.close(function() {
                         try {
                             e.renameSync(o, n), a()
                         } catch (t) {
@@ -2640,8 +2651,15 @@
         }
         var b2 = document.createElement("button");
         b2.type = "button", b2.className = "link", b2.textContent = "⬆ ارفع الفيديو من جهازك", b2.onclick = function() {
-            var picked = b(!1, "اختر ملف الفيديو الذي نزّلته يدوياً", ["mp4", "mov", "mkv", "webm", "m4v", "avi"]);
-            picked && picked[0] && onPick && onPick(picked[0])
+            // كانت أي مشكلة هون (نافذة الاختيار انغلقت بدون شي، أو استثناء) بتضل صامتة
+            // تماماً للمستخدم (onclick بدون try/catch ما بيطلع ولا رسالة) — هيك صار نلف
+            // الكل بمحاولة واضحة ونعرض أي نتيجة (نجاح، إلغاء، أو خطأ) برسالة حقيقية.
+            try {
+                var picked = b(!1, "اختر ملف الفيديو الذي نزّلته يدوياً", ["mp4", "mov", "mkv", "webm", "m4v", "avi"]);
+                picked && picked[0] ? onPick && onPick(picked[0]) : f("ما اخترت أي ملف (أُلغيت نافذة الاختيار).", "w")
+            } catch (errPick) {
+                f("تعذّر فتح نافذة اختيار الملف: " + String(errPick.message || errPick).slice(0, 200), "e")
+            }
         }, wrap.appendChild(b2)
     }
     var Tt = {
@@ -2662,10 +2680,13 @@
         var e = String(t || "").trim();
         return /(^|\/\/)(www\.)?(t|telegram)\.me\//i.test(e) && !/[?&]embed=/.test(e) && (e += (e.indexOf("?") < 0 ? "?" : "&") + "embed=1&mode=tme"), /instagram\.com/i.test(e) && (e = e.split("?")[0]), e
     }
-    async function Pt(t, e, n, a) {
+    async function Pt(t, e, n, a, stEl) {
         var i, o = String(t || ""),
             s = "",
-            c = "";
+            c = "",
+            onProg = function(pct) {
+                a && a("جاري التنزيل… " + sbPlatformName(o) + " — " + pct + "٪"), sbDlBar(stEl, pct)
+            };
         if (i = /(?:twitter|x)\.com\/([\w]+)\/status\/(\d+)/i.exec(o)) {
             a && a("أجرّب مسار X البديل…");
             var l = await Ut("https://api.fxtwitter.com/" + i[1] + "/status/" + i[2], 0);
@@ -2689,7 +2710,7 @@
             s = h[Math.min(n, h.length) - 1] || h[0], c = "tg-" + i[1] + "-" + i[2] + (n > 1 ? "-" + n : "") + ".mp4"
         }
         var p = r.join(e, c);
-        return await At(s, p, 0), p
+        return await At(s, p, 0, onProg), p
     }
 
     function Dt(t) {
@@ -2805,7 +2826,7 @@
                 if (null == w) {
                     var y = "";
                     try {
-                        y = await Pt(t.url, dlDir, 1, o)
+                        y = await Pt(t.url, dlDir, 1, o, a)
                     } catch (t) {
                         b.push("بديل: " + String(t.message || t).slice(0, 160))
                     }
@@ -4216,7 +4237,7 @@
             if (null == C) {
                 var A = "";
                 try {
-                    A = await Pt(t.url, b, y, a)
+                    A = await Pt(t.url, b, y, a, t._st)
                 } catch (t) {
                     M.push("بديل: " + String(t.message || t).slice(0, 160))
                 }
