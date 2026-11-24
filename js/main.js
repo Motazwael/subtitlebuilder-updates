@@ -3639,10 +3639,11 @@
     }
     var fe = /^(في|من|إلى|الى|على|عن|مع|بين|حتى|لدى|عند|ب|ل|ك|و|أن|ان|أنه|لـ)$/;
 
-    function me(t, e) {
+    function me(t, e, maxLines) {
+        maxLines = maxLines || 3;
         if (t = String(t || ""), /\n/.test(t)) {
             var n = t.split(/\n/).map(teClean).filter(Boolean);
-            return n.length > 3 && (n = [n[0], n[1], n.slice(2).join(" ")]), n
+            return n.length > maxLines && (n = n.slice(0, maxLines - 1).concat([n.slice(maxLines - 1).join(" ")])), n
         }
         return function(t) {
             if (!t || t.length < 2) return t;
@@ -3703,7 +3704,7 @@
             return o.map(function(t) {
                 return t.join(" ")
             })
-        }(t, 3, e))
+        }(t, maxLines, e))
     }
 
     function de(t, e, n) {
@@ -3928,7 +3929,7 @@
             };
             q(".rc-t").value = e.title || "", q(".rc-s").value = e.subtitle || "", q(".rc-url").value = e.url || "", q(".rc-src").value = e.source || "", q(".rc-loc").value = e.location || "", e.file && (q(".rc-st").textContent = "ملف محلي: " + r.basename(e.file));
             var pv = function() {
-                q(".pt").textContent = me(e.title, d("raw-mxt", 22)).join("  ⏎  "), q(".ps").textContent = me(e.subtitle, d("raw-mxs", 20)).join("  ⏎  ")
+                q(".pt").textContent = me(e.title, d("raw-mxt", 22)).join("  ⏎  "), q(".ps").textContent = me(e.subtitle, d("raw-mxs", 20), 1).join("  ⏎  ")
             };
             // shared fields: edits apply to every range that belongs to this same video
             var setAll = function(field, val) {
@@ -4347,7 +4348,7 @@
                     B = D ? D.start + D.dur : 0,
                     F = ae(i("raw-date") && i("raw-date").value || "") || ue(),
                     H = me(P.title, d("raw-mxt", 22)),
-                    $ = me(P.subtitle, d("raw-mxs", 20)),
+                    $ = me(P.subtitle, d("raw-mxs", 20), 1),
                     q = await xe(P.url),
                     R = d("raw-blue", NaN),
                     G = await m("sb_fillRaw", {
@@ -4426,7 +4427,7 @@
                                 a = t.start + t.dur,
                                 i = Math.min(r + Y, a),
                                 o = me(n.title, d("raw-mxt", 22)),
-                                s = me(n.subtitle, d("raw-mxs", 20)),
+                                s = me(n.subtitle, d("raw-mxs", 20), 1),
                                 c = ae(n.location),
                                 l = ae(n.source) || le(n.url);
                             U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
@@ -4508,7 +4509,7 @@
                     sw: Math.max(1, d("raw-sw", 5)),
                     end: 0,
                     title: me(t.title, d("raw-mxt", 22)),
-                    sub: me(t.subtitle, d("raw-mxs", 20)),
+                    sub: me(t.subtitle, d("raw-mxs", 20), 1),
                     loc: ae(t.location),
                     src: ae(t.source) || le(t.url),
                     date: ae(i("raw-date") && i("raw-date").value || "") || ue()
