@@ -2516,7 +2516,20 @@
     }
     async function Lt(t) {
         var a = !t && Q([_t, "/opt/homebrew/bin/yt-dlp", "/usr/local/bin/yt-dlp", r.join(n.homedir(), ".local/bin/yt-dlp")]);
-        if (a) return a;
+        if (a) {
+            // يوتيوب/إنستغرام/فيسبوك بيغيّروا طريقة حمايتهم باستمرار، وyt-dlp بيصدر تحديثات
+            // كل كم يوم عشان يلحق هالتغييرات — نسخة قديمة = تنزيل بيفشل بشكل متقطع وغير
+            // متوقع بكل المنصات تقريباً. نحدّثها تلقائياً مرة كحد أقصى كل ٢٤ ساعة (بصمت،
+            // بدون ما نوقف التنزيل إذا فشل التحديث لأي سبب، مثلاً عدم وجود إنترنت).
+            var lastUpd = Number(p("sb.ytdlpUpdatedAt", "0")) || 0;
+            if (Date.now() - lastUpd > 864e5) {
+                try {
+                    await jt(a, ["-U"])
+                } catch (t) {}
+                h("sb.ytdlpUpdatedAt", String(Date.now()))
+            }
+            return a
+        }
         v(r.dirname(_t));
         var i = "darwin" === process.platform ? "yt-dlp_macos" : "win32" === process.platform ? "yt-dlp.exe" : "yt-dlp_linux";
         f("أنزّل أداة yt-dlp مرة واحدة (حوالي 30 ميغا)…", "w"), await At("https://github.com/yt-dlp/yt-dlp/releases/latest/download/" + i, _t);
@@ -2581,7 +2594,7 @@
             var h = [];
             if (d.body.replace(/<video[^>]*\ssrc="([^"]+)"/gi, function(t, e) {
                     return h.push(e.replace(/&amp;/g, "&")), t
-                }), !h.length) throw new Error("تيليغرام: لا فيديو ظاهر في المنشور (قناة خاصة أو المنشور بلا فيديو).");
+                }), !h.length) throw new Error("تيليغرام: لا فيديو ظاهر بمعاينة المنشور على الويب — غالباً لأن حجم الفيديو أكبر من حد المعاينة (حوالي ٢٠ ميغا)، أو لأن القناة خاصة، أو المنشور بلا فيديو أصلاً. بهالحالة لازم تنزّل الفيديو يدوياً من تطبيق تيليغرام نفسه وتسحبه/تفلته على الأداة.");
             s = h[Math.min(n, h.length) - 1] || h[0], c = "tg-" + i[1] + "-" + i[2] + (n > 1 ? "-" + n : "") + ".mp4"
         }
         var p = r.join(e, c);
@@ -2663,7 +2676,7 @@
                     try {
                         w = await jt(s, g[k][1].concat(v, [Ot(t.url)]))
                     } catch (e) {
-                        if (b.push(g[k][0] + ": " + String(e.message).slice(0, 260)), !x && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in/i.test(String(e.message)) && s === _t) {
+                        if (b.push(g[k][0] + ": " + String(e.message).slice(0, 260)), !x && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && s === _t) {
                             x = !0, o("تحديث الأداة…");
                             try {
                                 await jt(s, ["-U"]), w = await jt(s, g[k][1].concat(v, [Ot(t.url)]))
@@ -2694,7 +2707,7 @@
                 o("⬇ أعد المحاولة");
                 var C = String(e.message || e).slice(0, 400),
                     hasCookieFile = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
-                if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile && /sign in|login|rate-limit|429|403|private|restricted/i.test(C)) C += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب: حمّل إضافة متصفح مثل «Get cookies.txt LOCALLY» وسجّل دخولك لإنستغرام فيها، صدّر ملف cookies.txt، وحدّده من حقل «ملف كوكيز» بإعدادات الخام — بيصير التنزيل مباشر بدون الاعتماد على فتح متصفحك.";
+                if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(C)) C += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب: حمّل إضافة متصفح مثل «Get cookies.txt LOCALLY» وسجّل دخولك لإنستغرام فيها، صدّر ملف cookies.txt، وحدّده من حقل «ملف كوكيز» بإعدادات الخام — بيصير التنزيل مباشر بدون الاعتماد على فتح متصفحك.";
                 if (a && a.parentNode) {
                     var M = a.parentNode.querySelector(".dlerr") || document.createElement("div");
                     M.className = "dlerr", M.style.cssText = "flex-basis:100%;font-size:11px;color:#ff8a80;direction:ltr;text-align:left;word-break:break-all", M.textContent = C, M.parentNode || a.parentNode.appendChild(M)
@@ -4013,7 +4026,7 @@
                 try {
                     C = await jt(v, S[_][1].concat(E, [Ot(t.url)]))
                 } catch (e) {
-                    if (M.push(S[_][0] + ": " + String(e.message).slice(0, 260)), !N && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in/i.test(String(e.message)) && v === _t) {
+                    if (M.push(S[_][0] + ": " + String(e.message).slice(0, 260)), !N && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && v === _t) {
                         N = !0, a("تحديث الأداة…");
                         try {
                             await jt(v, ["-U"]), C = await jt(v, S[_][1].concat(E, [Ot(t.url)]))
@@ -4033,7 +4046,7 @@
                 if (!A) {
                     var joined = M.join(" | "),
                         hasCookieFile2 = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
-                    if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-limit|429|403|private|restricted/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
+                    if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
                     throw new Error(joined)
                 }
                 C = A, l = !1

@@ -1,6 +1,6 @@
 {
-  "version": "1.7.19",
-  "notes": "إصلاح عطل بمحلل سكربت الخام: أي فقرة/روابط حرة متروكة بآخر السكربت (نص المنشور الأصلي للمرجع مثلاً) بعد نهاية آخر فيديو كانت بتتحول لـ\"فيديو\" وهمي فاضي بكرت لحاله",
+  "version": "1.7.20",
+  "notes": "تحسينات وإصلاحات",
   "files": [
     "js/cs.js","js/split.js","js/script.js","js/align.js","js/gdoc.js",
     "js/numwords.js","js/onset.js","js/verify.js","js/shape.js",
