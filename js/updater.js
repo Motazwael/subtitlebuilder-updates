@@ -104,15 +104,25 @@
     // (زي main.js) انكتبت فعلياً بمحتوى قديم. الحل: نحل أحدث commit SHA على GitHub
     // ونجيب كل الملفات من رابط مثبّت على هاد الـ SHA (رابط جديد كل مرة تماماً،
     // ما انكاش قبل هيك، فمستحيل يرجع محتوى قديم) بدل رابط الفرع "main" المتغيّر.
+    // GitHub بيسمح بـ ٦٠ طلب/ساعة بس من غير تسجيل دخول لواجهة الـ API (لكل جهاز/IP) —
+    // لو المستخدم ضغط "تحقق من تحديث" كتير متتالي (بالتست مثلاً)، منقدر نستهلك الحد
+    // هاد بسرعة، وبعدها resolveBase() بترجع للرابط العادي (البديل) يلي فيه بالضبط نفس
+    // مشكلة الكاش يلي كنا عم نتجنبها (راجع الملاحظة فوق). لهيك منكاش الـ SHA المحلول
+    // لمدة قصيرة (90 ثانية) حتى الضغطات المتكررة بفترة قصيرة ما تستهلك الحد من غير داعي.
+    var resolvedCache = null, resolvedAt = 0;
     function resolveBase(cb) {
         var m = BASE.match(/^https:\/\/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/[^\/]+\/$/);
         if (!m) return cb(BASE); // شكل رابط غير متوقع — نكمل بالطريقة العادية
+        if (resolvedCache && Date.now() - resolvedAt < 90000) return cb(resolvedCache);
         var apiUrl = "https://api.github.com/repos/" + m[1] + "/" + m[2] + "/commits/main";
         fetch(apiUrl, { cache: "no-store", headers: { Accept: "application/vnd.github.v3+json" } })
             .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
             .then(function (j) {
-                if (j && j.sha) cb("https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/" + j.sha + "/");
-                else cb(BASE);
+                if (j && j.sha) {
+                    resolvedCache = "https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/" + j.sha + "/";
+                    resolvedAt = Date.now();
+                    cb(resolvedCache);
+                } else cb(BASE);
             })
             // أي فشل (تقييد معدل الطلبات، مشكلة شبكة..) نرجع لرابط الفرع العادي
             // بدل ما نوقف التحديث بالكامل — احتياطي، مش يفترض يصير غالباً.
