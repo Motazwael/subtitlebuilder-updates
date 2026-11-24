@@ -111,7 +111,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 #log { margin:14px 0 0; padding:8px; height:130px; overflow:auto; overscroll-behavior:contain; white-space:pre-wrap; word-break:break-word; background:var(--card); border:1px solid var(--line); border-radius:10px; font:11.5px/1.5 "Geeza Pro",Menlo,Consolas,monospace; }
 #log .e { color:var(--err); } #log .w { color:var(--warn); } #log .ok { color:var(--ok); }
 #upd-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
-#upd-row .w { color:var(--warn); } #upd-row .ok { color:var(--ok); }
+/* دمج صف "تحقق من تحديث" بصف ألوان الإضافة بسطر واحد نضيف (upd-row الأصلي بينقل
+   محتواه هون بالـ JS وبينشال). الألوان بجهة، التحديث بالجهة التانية بنفس المستوى. */
+#theme-row.theme-row-merged { justify-content:space-between; flex-wrap:wrap; }
+.theme-swatches { display:flex; gap:6px; }
+.upd-inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11.5px; }
+.upd-inline .link { font-size:11.5px; }
+#upd-msg.w { color:var(--warn); } #upd-msg.ok { color:var(--ok); }
 [hidden] { display:none !important; }
 
 #view .cap { color:#8fb2ff; }

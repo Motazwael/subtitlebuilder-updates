@@ -5936,6 +5936,28 @@
     } catch (e) {}
 }();
 
+// صفّ "تحقق من تحديث" وصفّ ألوان الإضافة كانوا سطرين منفصلين فوق بعض — شكلهم مبعثر.
+// ندمجهم بسطر واحد نضيف: الألوان بجهة والتحديث بالجهة التانية، نفس مستوى الصف.
+// index.html نفسه ما بيتحدث، فبنعمل الدمج بالـ JS (ملف مشترك) عشان ينتشر تلقائياً.
+!function () {
+    try {
+        var updRow = document.getElementById("upd-row"),
+            themeRow = document.getElementById("theme-row");
+        if (!updRow || !themeRow || themeRow.dataset.sbMerged) return;
+        themeRow.dataset.sbMerged = "1";
+        var swWrap = document.createElement("div");
+        swWrap.className = "theme-swatches";
+        while (themeRow.firstChild) swWrap.appendChild(themeRow.firstChild);
+        var updWrap = document.createElement("div");
+        updWrap.className = "upd-inline";
+        while (updRow.firstChild) updWrap.appendChild(updRow.firstChild);
+        themeRow.appendChild(swWrap);
+        themeRow.appendChild(updWrap);
+        themeRow.classList.add("theme-row-merged");
+        updRow.remove();
+    } catch (e) {}
+}();
+
 // شيل كلمة "ELBANA" (وكل بقايا "KEMOO" القديمة لو انكتبت بأي نسخة) من سطر المؤلف
 // تحت الشعار، ويضل بس "MOTAZ WAEL" — index.html نفسه ما بيتحدث، فبنعدّلها بالـ JS
 // (ملف مشترك) عشان تنتشر تلقائياً لكل نسخ كيمو المركّبة عن طريق التحديث البعيد.
