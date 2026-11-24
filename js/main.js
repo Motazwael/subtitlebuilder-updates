@@ -2539,19 +2539,68 @@
         return f("جهزت أداة التنزيل.", "ok"), _t
     }
 
-    function jt(t, e) {
+    function jt(t, e, k) {
+        // لو مرّرنا دالة تقدّم (k)، نستخدم spawn بدل execFile عشان نقرأ خرج yt-dlp
+        // سطر سطر وهو شغّال (بدل ما ننتظر لين يخلص بالكامل) ونطلع نسبة التنزيل الحيّة
+        // من سطور زي "[download]  42.3% of ..." ونبعتها لمستدعي الدالة ليحدّث شريط التقدّم.
         return new Promise(function(n, r) {
             var i = Object.assign({}, process.env, {
                 PATH: "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:" + (process.env.PATH || "")
             });
-            a.execFile(t, e, {
+            if (!k) return a.execFile(t, e, {
                 env: i,
                 timeout: 9e5,
                 maxBuffer: 31457280
             }, function(t, e, a) {
                 t ? r(new Error(String(a || t.message).split("\n").filter(Boolean).slice(-3).join(" "))) : n(String(e))
+            });
+            var cp;
+            try {
+                cp = a.spawn(t, e, {
+                    env: i
+                })
+            } catch (se) {
+                return r(se)
+            }
+            var out = "",
+                err = "",
+                buf = "",
+                done = !1,
+                kt = setTimeout(function() {
+                    if (!done) try {
+                        cp.kill("SIGKILL")
+                    } catch (ke) {}
+                }, 9e5);
+            cp.stdout && cp.stdout.on("data", function(d) {
+                var s = d.toString();
+                out += s, buf += s;
+                var ls = buf.split(/\r|\n/);
+                buf = ls.pop();
+                ls.forEach(function(ln) {
+                    var m = /\[download\]\s+([\d.]+)%/.exec(ln);
+                    if (m) try {
+                        k(parseFloat(m[1]))
+                    } catch (pe) {}
+                })
+            }), cp.stderr && cp.stderr.on("data", function(d) {
+                err += d.toString()
+            }), cp.on("error", function(e2) {
+                done = !0, clearTimeout(kt), r(e2)
+            }), cp.on("close", function(code) {
+                done = !0, clearTimeout(kt), code ? r(new Error(String(err || out).split("\n").filter(Boolean).slice(-3).join(" "))) : n(out)
             })
         })
+    }
+    // شريط تقدّم بصري بسيط (نفس كلاس .pbar/.pbar-fill المستخدم لتثبيت نموذج المحاذاة) —
+    // بينحط تلقائياً جنب أي عنصر حالة تنزيل، وبيتحدّث مع كل نسبة جديدة توصل من jt().
+    function Wt(el, pct, done) {
+        if (!el || !el.parentNode) return;
+        var bar = el.parentNode.querySelector(".dlbar");
+        if (done) return void(bar && (bar.hidden = !0));
+        bar || (bar = document.createElement("div"), bar.className = "pbar dlbar", bar.innerHTML = '<div class="pbar-fill"></div>', el.parentNode.insertBefore(bar, el.nextSibling));
+        bar.hidden = !1;
+        var fill = bar.querySelector(".pbar-fill");
+        fill && (fill.style.width = Math.max(0, Math.min(100, pct || 0)) + "%")
     }
     var Tt = {
         no: ["بدون تسجيل دخول", []],
@@ -2674,12 +2723,16 @@
                 for (var k = 0; k < g.length && null == w; k++) {
                     o("جاري التنزيل… (" + g[k][0] + ")");
                     try {
-                        w = await jt(s, g[k][1].concat(v, [Ot(t.url)]))
+                        w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
+                            o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), Wt(a, pc)
+                        })
                     } catch (e) {
                         if (b.push(g[k][0] + ": " + String(e.message).slice(0, 260)), !x && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && s === _t) {
                             x = !0, o("تحديث الأداة…");
                             try {
-                                await jt(s, ["-U"]), w = await jt(s, g[k][1].concat(v, [Ot(t.url)]))
+                                await jt(s, ["-U"]), w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
+                                    o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), Wt(a, pc)
+                                })
                             } catch (t) {
                                 b.push("بعد التحديث: " + String(t.message).slice(0, 120))
                             }
@@ -2702,8 +2755,9 @@
                 if (!E || !e.existsSync(E)) throw new Error("لم يظهر الملف بعد التنزيل.");
                 E = await Ft(E, p, o), i[t.url] = E, h("sb.dlmap", JSON.stringify(i));
                 var S = await m("sb_importFile", E, u ? "01_Video" : "");
-                c.dl[t.url] = !0, o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + d + ")."), "ok")
+                c.dl[t.url] = !0, Wt(a, 0, !0), o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + d + ")."), "ok")
             } catch (e) {
+                Wt(a, 0, !0);
                 o("⬇ أعد المحاولة");
                 var C = String(e.message || e).slice(0, 400),
                     hasCookieFile = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
@@ -4024,12 +4078,16 @@
             for (var _ = 0; _ < S.length && null == C; _++) {
                 a("جاري التنزيل… (" + S[_][0] + ")");
                 try {
-                    C = await jt(v, S[_][1].concat(E, [Ot(t.url)]))
+                    C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
+                        a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), Wt(t._st, pc)
+                    })
                 } catch (e) {
                     if (M.push(S[_][0] + ": " + String(e.message).slice(0, 260)), !N && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && v === _t) {
                         N = !0, a("تحديث الأداة…");
                         try {
-                            await jt(v, ["-U"]), C = await jt(v, S[_][1].concat(E, [Ot(t.url)]))
+                            await jt(v, ["-U"]), C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
+                                a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), Wt(t._st, pc)
+                            })
                         } catch (t) {
                             M.push("بعد التحديث: " + String(t.message).slice(0, 120))
                         }
@@ -4070,7 +4128,7 @@
             var I = C.split("\n").filter(function(t) {
                 return t.trim()
             }).length;
-            return I > 1 && f("الرابط أنزل " + I + " ملفات؛ اخترت الأخير. حدّد «رقم الفيديو داخل الرابط» إن أردت غيره.", "w"), L = await Ft(L, x, a), o[u] = L, h("sb.dlmap", JSON.stringify(o)), a("✓ نُزّل", "ok"), {
+            return I > 1 && f("الرابط أنزل " + I + " ملفات؛ اخترت الأخير. حدّد «رقم الفيديو داخل الرابط» إن أردت غيره.", "w"), L = await Ft(L, x, a), o[u] = L, h("sb.dlmap", JSON.stringify(o)), Wt(t._st, 0, !0), a("✓ نُزّل", "ok"), {
                 file: L,
                 trimmed: l,
                 bin: w ? "01_Video" : ""
@@ -4159,6 +4217,7 @@
                         c: y
                     }), y._st && (y._st.textContent = "✓ جاهز", y._st.className = "rc-st ok")
                 } catch (t) {
+                    Wt(y._st, 0, !0);
                     var j = String(t.message || t).slice(0, 400);
                     /login required|rate-limit|cookies/i.test(j) && (j = "الموقع يطلب تسجيل دخول: اختر ملف كوكيز (cookies.txt) في الإعدادات أو سجّل الدخول في كروم. — " + j.slice(0, 200)), y._st && (y._st.textContent = j, y._st.className = "rc-st e"), f("تعذّر تنزيل الفيديو " + (k + 1) + ": " + j, "e")
                 }
@@ -5456,4 +5515,412 @@
             }
         }
     }, !0);
+}();
+
+// ⚙️ لوحة إعدادات موحّدة (كوكيز + اسم المطوّر + لغة الواجهة + كل الإعدادات المبعثرة بكل وضع)
+// + ترجمة كاملة للواجهة للإنجليزي — نبنيها بالكامل بالـ JS (مش بتعديل index.html) عشان تنتشر
+// تلقائياً لكل النسخ المركّبة عن طريق التحديث البعيد (index.html ما بينحدّث عن بعد أبداً، بقصد،
+// حتى ما يكسر أي نسخة مخصصة زي كيمو — شايفه بتعليق js/updater.js).
+!function () {
+    "use strict";
+    if (window.__sbSettingsUI) return;
+    window.__sbSettingsUI = !0;
+    var header = document.querySelector("header");
+    if (!header) return;
+
+    var gear = document.createElement("button");
+    gear.type = "button", gear.id = "sb-gear", gear.title = "الإعدادات", gear.textContent = "⚙️", header.appendChild(gear);
+
+    var overlay = document.createElement("div");
+    overlay.id = "sb-settings-overlay", overlay.hidden = !0;
+    overlay.innerHTML = '<div id="sb-settings-modal" role="dialog" aria-label="الإعدادات">' +
+        '<div id="sb-settings-head"><h2>الإعدادات</h2><button type="button" id="sb-settings-close" title="إغلاق">✕</button></div>' +
+        '<nav id="sb-settings-tabs" role="tablist">' +
+        '<button type="button" class="on" data-tab="gen">عام</button>' +
+        '<button type="button" data-tab="vg">الفيديوغراف</button>' +
+        '<button type="button" data-tab="raw">الخام</button>' +
+        '<button type="button" data-tab="quote">الاقتباس</button>' +
+        "</nav>" +
+        '<div id="sb-settings-body">' +
+        '<div class="sb-tab-panel" data-panel="gen">' +
+        '<div id="sb-settings-credit"><p class="muted">المطوّر</p><p id="sb-dev-name">Motaz Wael</p></div>' +
+        '<div id="sb-settings-lang"><p class="muted" id="sb-lang-label">لغة الواجهة</p>' +
+        '<div id="sb-lang-btns"><button type="button" data-lang="ar" class="on">العربية</button><button type="button" data-lang="en">English</button></div>' +
+        "</div>" +
+        "</div>" +
+        '<div class="sb-tab-panel" data-panel="vg" hidden></div>' +
+        '<div class="sb-tab-panel" data-panel="raw" hidden></div>' +
+        '<div class="sb-tab-panel" data-panel="quote" hidden></div>' +
+        "</div>" +
+        "</div>";
+    document.body.appendChild(overlay);
+
+    function openModal() { overlay.hidden = !1 }
+
+    function closeModal() { overlay.hidden = !0 }
+    gear.onclick = openModal;
+    overlay.querySelector("#sb-settings-close").onclick = closeModal;
+    overlay.addEventListener("mousedown", function (e) { e.target === overlay && closeModal() });
+    document.addEventListener("keydown", function (e) { "Escape" === e.key && !overlay.hidden && closeModal() });
+
+    var tabs = Array.prototype.slice.call(overlay.querySelectorAll("#sb-settings-tabs button")),
+        panels = Array.prototype.slice.call(overlay.querySelectorAll(".sb-tab-panel"));
+    tabs.forEach(function (btn) {
+        btn.onclick = function () {
+            tabs.forEach(function (b) { b.classList.toggle("on", b === btn) }),
+            panels.forEach(function (p) { p.hidden = p.getAttribute("data-panel") !== btn.getAttribute("data-tab") })
+        }
+    });
+
+    // نقل الإعدادات المبعثرة من كل وضع إلى الصندوق الموحّد — appendChild بينقل العنصر
+    // الحقيقي (مش نسخة)، فكل أحداث main.js المربوطة عليه (oninput/onclick) تضل شغالة
+    // بالضبط متل ما هي، بس بمكان عرض جديد.
+    function unwrapInto(details, panel) {
+        if (!details || !panel) return;
+        Array.prototype.slice.call(details.children).forEach(function (k) {
+            "SUMMARY" !== k.tagName && panel.appendChild(k)
+        }), details.parentNode && details.parentNode.removeChild(details)
+    }
+    try {
+        var vgAdv = document.querySelector("#view-vg > details.adv");
+        if (vgAdv) {
+            var vgPanel = overlay.querySelector('.sb-tab-panel[data-panel="vg"]'),
+                vgGrid = vgAdv.querySelector(".grid"),
+                keepWrap = document.createElement("div");
+            keepWrap.id = "vg-adv-keep";
+            Array.prototype.slice.call(vgAdv.children).forEach(function (k) {
+                k !== vgGrid && "SUMMARY" !== k.tagName && keepWrap.appendChild(k)
+            }), vgGrid && vgPanel.appendChild(vgGrid), vgAdv.parentNode.insertBefore(keepWrap, vgAdv), vgAdv.parentNode.removeChild(vgAdv)
+        }
+    } catch (e) {}
+    try {
+        var rawAdv = document.querySelector("#view-raw details.adv");
+        rawAdv && unwrapInto(rawAdv, overlay.querySelector('.sb-tab-panel[data-panel="raw"]'))
+    } catch (e) {}
+    try {
+        var qDetails = document.querySelectorAll("#view-quote details");
+        qDetails[0] && unwrapInto(qDetails[0], overlay.querySelector('.sb-tab-panel[data-panel="quote"]')),
+        qDetails[1] && unwrapInto(qDetails[1], overlay.querySelector('.sb-tab-panel[data-panel="quote"]'))
+    } catch (e) {}
+
+    var SB_EN = {
+        "(الخام فقط)": "(Raw only)",
+        "(بديل عن سحب الحافة لما بريمير يرفضها)": "(alternative to edge-dragging when Premiere refuses it)",
+        "(على تراك V": "(on track V",
+        "+ إضافة موقرت": "+ Add MOGRT",
+        "+ مشروع جديد": "+ New project",
+        "+٠.٥": "+0.5",
+        "1 نوفمبر 2026": "November 1, 2026",
+        "MLX (أسرع على M1)": "MLX (faster on M1)",
+        "cookies.txt (اختياري)": "cookies.txt (optional)",
+        "large-v3 (الأدق)": "large-v3 (most accurate)",
+        "medium (أدق، أول مرة ينزّل ~1.5GB)": "medium (more accurate, first run downloads ~1.5GB)",
+        "small (سريع)": "small (fast)",
+        "؛ أطفئها قبل التصدير)": "; turn it off before exporting)",
+        "أرجع نص التعليق كما في السكربت الأصلي": "Restore narration text as in the original script",
+        "أرقام الفيديوهات داخل الرابط (مثل 1 أو 1,2)": "Video numbers within the link (e.g. 1 or 1,2)",
+        "أسطر الترجمة (": "Translation lines (",
+        "أسفل %": "Bottom %",
+        "أسماء/عبارات ما تنقص بين كابشنين (سطر لكل وحدة، مثال: دونالد ترامب)": "Names/phrases that never split across two captions (one per line, e.g. Donald Trump)",
+        "أطول بـ ٠.٥ث": "+0.5s longer",
+        "أطول مدة للسبتايتل (ث)": "Max subtitle duration (s)",
+        "أظهر المساحة الآمنة على شاشة العرض": "Show the safe area on the preview screen",
+        "أعلى %": "Top %",
+        "أقصر بـ ٠.٥ث": "-0.5s shorter",
+        "أقصى حروف في سطر العنوان الرئيسي": "Max characters per main title line",
+        "أقصى حروف في سطر العنوان الفرعي": "Max characters per subtitle-title line",
+        "أقصى كلمات في السبتايتل": "Max words per subtitle",
+        "أقصى كلمات في سطر الهايلايت": "Max words per highlight line",
+        "أقصى مدة للمقابلة (ث)": "Max interview duration (s)",
+        "أقل مدة للسبتايتل (ث)": "Min subtitle duration (s)",
+        "أقل مدة للموقرت (ث)": "Min MOGRT duration (s)",
+        "أنزّل الصوت على التايم لاين عند المؤشر": "Place the audio on the timeline at the playhead",
+        "أو الصق رابط السكربت (Google Docs)": "or paste the script link (Google Docs)",
+        "أول تراك فاضي": "first free track",
+        "أولاً: اكتب ما يقوله المعلّق وقارنه بالنص، واحذف الكلمات غير المنطوقة (أبطأ قليلاً)": "First: transcribe what the narrator says and compare it to the text, then remove unspoken words (slightly slower)",
+        "إزالة التعليم": "Clear highlighting",
+        "إعادة التقسيم": "Re-split",
+        "إعدادات إضافية": "Additional settings",
+        "إعدادات متقدمة": "Advanced settings",
+        "إلغاء": "Cancel",
+        "ابدأ دايماً من أول فريم (٠:٠٠) بدل مكان المؤشر (إلا لو الصوت موجود مسبقاً على التايم لاين)": "Always start from frame 0:00 instead of the playhead (unless audio is already on the timeline)",
+        "ابنِ الاقتباس على التايم لاين": "Build the quote on the timeline",
+        "ابنِ الخام على التايم لاين": "Build the raw on the timeline",
+        "اجلب": "Fetch",
+        "احذف أو عدّل أي كلمة في نص التعليق": "Delete or edit any word in the narration text",
+        "احذف من النص كل كلمة ما تطابقت مع الصوت (خطر: المطابقة الصوتية مش مضمونة ١٠٠٪، ممكن تحذف كلمات حقيقية قالها المعلّق مثل \"هذا\". ملاحظات المونتاج وأسماء المصادر تُحذف دائماً بغض النظر عن هاي الخانة)": "Delete every word that didn't match the audio (risky: audio matching isn't 100% reliable, it might delete real words the narrator said like \"this\". Editing notes and source names are always removed regardless of this option)",
+        "اختبر التنزيل فقط": "Test download only",
+        "اختر ملف": "Choose file",
+        "اختر ملف الصوت": "Choose audio file",
+        "اختيار": "Choose",
+        "استخدم نموذج المحاذاة MMS عند توفّره (أدق توقيت)": "Use the MMS alignment model when available (more accurate timing)",
+        "اسم الضيف": "Guest name",
+        "اسم الضيف ووصفه": "Guest name & title",
+        "اسم ملف الفيديو بالمشروع": "Video file name in the project",
+        "اضبط توقيت الكابشن على سكتات الضيف الفعلية (يستخدم نموذج MMS تلقائياً إن كان مثبّتاً للدقة الأعلى، وإلا محرك المطابقة المحلي العادي)": "Align caption timing to the guest's actual pauses (uses the MMS model automatically if installed for higher accuracy, otherwise the regular local matching engine)",
+        "اضغط مرة على الكليب بالتايم لاين، بعدين اضغط «اقرأ المحدد»، عدّل المدة، واضغط «طبّق».": "Click the clip once on the timeline, then click \"Read selection\", edit the duration, and click \"Apply\".",
+        "افتح Terminal والصق الأوامر التالية مرة واحدة:": "Open Terminal and paste the following commands once:",
+        "افتح سيكونس قالب الخام (فيه القوالب جاهزة على التايم لاين) وستملؤها الإضافة تلقائياً. إن لم تكن موجودة على السيكونس تُوضع من المكتبة حسب الاختيارات أدناه.": "Open the raw template sequence (it has the MOGRTs ready on the timeline) and the extension will fill them in automatically. If they aren't on the sequence, they'll be placed from the library per the choices below.",
+        "افحص ترتيب المشروع": "Scan project organization",
+        "اقتباس": "Quote",
+        "الألوان": "Colors",
+        "الانتقال من الرئيسي إلى الفرعي عند (ث)": "Switch from main to sub-title at (s)",
+        "البداية (ث، فارغ = مؤشر التايم لاين)": "Start (s, blank = timeline playhead)",
+        "البناء على التايم لاين": "Build on the timeline",
+        "التاريخ": "Date",
+        "التراكات (V) — اختر أرقام فاضية تفادياً لأي تراك مقفول/مشغول بالتصحيح اللوني أو الشادو": "Tracks (V) — pick free numbers to avoid any track locked/used by color grading or shadows",
+        "التعليق أبيض · المقابلات أصفر FABB0E": "Narration white · interviews yellow FABB0E",
+        "التعليق الصوتي": "Narration",
+        "التنزيل على التايم لاين": "Download to the timeline",
+        "الخام": "Raw",
+        "الريل": "Reel",
+        "السبتايتل بالموقرت": "Subtitle as a MOGRT",
+        "السبتايتلات": "Subtitles",
+        "الصق السكربت هنا: عنوان رئيسي، عنوان فرعي، الرابط، ومن ثانية كذا إلى كذا. يمكن أكثر من فيديو.": "Paste the script here: main title, sub-title, the link, and from second X to second Y. More than one video is fine.",
+        "الصق سكربت الاقتباس هنا: عنوان، مصدر، مكان، اللينك، التوصيف (اسم الضيف وتعريفه)، الكابشن، وسابتيتل مع توقيت كل سطر.": "Paste the quote script here: title, source, location, the link, the guest's name and title, the caption, and the subtitles with each line's timing.",
+        "الصق نص التعليق، أو سكربت الجدول كاملاً (النص + الخامة + انسرت) وسأفرزه تلقائياً": "Paste the narration text, or the whole rundown script (text + footage + insert) and I'll sort it out automatically",
+        "الصوت": "Audio",
+        "العنوان": "Title",
+        "العنوان الرئيسي": "Main title",
+        "العنوان الفرعي": "Sub-title",
+        "العنوان بيستخدم نفس موقرت عنوان الخام (AJ - RAW Title 1)، والمكان بيستخدم موقرت Aj - Location Date (نفس إعدادات الخام).": "The title uses the same raw-title MOGRT (AJ - RAW Title 1), and the location uses the Aj - Location Date MOGRT (same as the raw settings).",
+        "الفيديو": "Video",
+        "الفيديوغراف": "Videograph",
+        "القوالب والبناء": "Templates & build",
+        "الكل بموقرت التعليق (أبيض)": "Everything with the narration MOGRT (white)",
+        "الكل بموقرت المقابلات (أصفر)": "Everything with the interview MOGRT (yellow)",
+        "المؤشر": "the playhead",
+        "المدة الجديدة (ث)": "New duration (s)",
+        "المساحة الآمنة (إنستغرام) ونقطة الهايلايت": "Safe area (Instagram) & highlight point",
+        "المصدر": "Source",
+        "المصدر (رويترز…)": "Source (Reuters…)",
+        "المطابقة": "Matching",
+        "المقابلات (الضيوف)": "Interviews (guests)",
+        "المكان": "Location",
+        "المناطق الحمراء بعيدة عن الأيقونات واللوغوهات. اختر موقرت الهايلايت ثم اضغط على الإطار حيث يظهر نصه، لتُحسب نقطة التصغير بدون قفزة.": "The red zones are clear of icons and logos. Pick the highlight MOGRT then click on the frame where its text appears, so the zoom-out point is calculated without a jump.",
+        "الموديل": "Model",
+        "الموقرتات": "MOGRTs",
+        "الموقع": "Location",
+        "النص": "Text",
+        "انزّل السبتايتل كموقرت (بدل تراك الكابشن)": "Place subtitles as a MOGRT (instead of the caption track)",
+        "انسخ القالب إلى سيكونس جديد باسم الموضوع قبل البناء": "Copy the template to a new sequence named after the topic before building",
+        "انسخ القالب إلى سيكونس جديد باسم عنوان السكربت قبل البناء": "Copy the template to a new sequence named after the script title before building",
+        "بحث باسم الموقرت…": "Search MOGRTs by name…",
+        "بداية الصوت (ث)": "Audio start (s)",
+        "بدون فويس أوفر: لا مطابقة، وتُوزَّع النصوص زمنياً حسب تقسيمي": "No voice-over: no matching, text is timed by my own splitting",
+        "بديل: قراءة الماركرات": "Alternative: read markers",
+        "بعد البناء: بيفرّغ كلام الضيف من الفيديو المقصوص فعلياً ويترجمه، وبيعرضلك النتيجة جنب ترجمة السكربت تقارن بينهم يدوياً. ما بيغيّر ترجمة السكربت تلقائياً — ترجمة السكربت هي المعتمدة.": "After building: it transcribes the guest's actual trimmed clip and translates it, showing the result next to the script's translation for you to compare manually. It never changes the script's translation automatically — the script translation stays the one used.",
+        "بقاء العنصر بعد الكلمة (ث)": "Item hold after the word (s)",
+        "تاريخ اليوم": "Today's date",
+        "تحديث القائمة": "Refresh list",
+        "تحديث مباشر: أي تعديل يُطبَّق على الكليبات الموجودة على التايم لاين": "Live update: any edit is applied to the clips already on the timeline",
+        "تحقّق بالذكاء الاصطناعي (اختياري)": "AI verification (optional)",
+        "تحقّق من الترجمة بالذكاء الاصطناعي": "Verify the translation with AI",
+        "تحكّم بطول موقرت محدد على التايم لاين": "Control the length of a selected MOGRT on the timeline",
+        "تراجع عن آخر تعديل": "Undo the last edit",
+        "تراك التاريخ V": "Date track V",
+        "تراك التعريف والمصدر (أسفل الشاشة)": "Lower-third & source track",
+        "تراك السبتايتل": "Subtitle track",
+        "تراك الصوت A": "Audio track A",
+        "تراك العناوين V": "Titles track V",
+        "تراك الفيديو V": "Video track V",
+        "تراك المصدر والموقع V": "Source & location track V",
+        "تراك الموقرتات (الهايلايت/الأسماء داخل النص)": "MOGRTs track (highlights/names within the text)",
+        "تراك النصوص V": "Text track V",
+        "ترتيب المشروع": "Organize the project",
+        "تعذّر التثبيت التلقائي؟ ثبّت يدوياً": "Automatic install failed? Install manually",
+        "تعريف الضيف": "Guest title",
+        "تعريف الضيف بعد أول كلمة من سبتايتله (ثوانٍ)": "Introduce the guest after the first word of their subtitle (seconds)",
+        "تعريفات تنزل تلقائياً": "Titles placed automatically",
+        "تقديم السبتايتل (فريم)": "Subtitle lead (frames)",
+        "تقديم الموقرت (فريم)": "MOGRT lead (frames)",
+        "تلقائي": "Automatic",
+        "تنزل كموقرت سبتايتل": "is placed as a subtitle MOGRT",
+        "تُقرأ الموقرتات تلقائياً من مجلد Local Templates في بريمير. إن لم تظهر اضغط «مسح قوالب بريمير» أو أضفها يدوياً.": "MOGRTs are read automatically from Premiere's Local Templates folder. If they don't show up, click \"Scan Premiere templates\" or add them manually.",
+        "جلب": "Fetch",
+        "جمل (4–5 كلمات)": "Sentences (4-5 words)",
+        "حجم الفيديو % (فارغ = تلقائي ليملأ العرض)": "Video size % (blank = automatic, fills the width)",
+        "حجم الهايلايت (Scale)": "Highlight size (Scale)",
+        "حدّث النصوص فقط": "Update text only",
+        "حروف في السطر": "Characters per line",
+        "حلّل السكربت": "Parse the script",
+        "داخل مجلد المشروع مباشرة (بدون مجلد فرعي)": "Directly inside the project folder (no subfolder)",
+        "دقة ظهور النص": "Text display granularity",
+        "دونالد ترامب\nبنيامين نتنياهو": "Donald Trump\nBenjamin Netanyahu",
+        "رابط مستند Google Docs (اختياري)": "Google Docs link (optional)",
+        "راجع البيانات": "Review the data",
+        "رقم خيار اللون الأحمر بنسخة «الآن» (يبدأ من 0)": "Red-color option number for the \"Now\" version (starts from 0)",
+        "رقم خيار اللون الأزرق (فارغ = تلقائي؛ يبدأ من 0)": "Blue-color option number (blank = automatic; starts from 0)",
+        "رقم خيار شعار AJA Now بنسخة «الآن» (يبدأ من 0)": "AJA Now logo option number for the \"Now\" version (starts from 0)",
+        "روابط الخامات": "Footage links",
+        "سدّ الفراغ حتى (ث)": "Close gaps up to (s)",
+        "سرعة القراءة (حرف/ثانية)": "Reading speed (chars/second)",
+        "سكربت الاقتباس": "Quote script",
+        "سكربت الخام": "Raw script",
+        "سيكونس القالب": "Template sequence",
+        "شكل أسطر الموقرت": "MOGRT line shape",
+        "صدّر الترانسكربت من بريمير: Window → Text، تبويب Transcript، فرّغه، بعدين من قائمة النقاط الثلاث اختر Export transcript (json)… واختر الملف هون. إذا موجود، رح أعتمده للتوقيت بدل التحليل المحلي.": "Export the transcript from Premiere: Window → Text, the Transcript tab, transcribe it, then from the three-dot menu choose Export transcript (json)… and pick the file here. If it's provided, I'll rely on it for timing instead of local analysis.",
+        "ضبط البداية والنهاية على حواف الصوت الفعلية (يسمع الصوت)": "Snap start/end to the actual audio edges (listens to the audio)",
+        "ضبط التزامن (مللي ثانية، + يؤخّر)": "Sync offset (ms, + delays)",
+        "طابق النص مع الصوت": "Match the text to the audio",
+        "ظلّل كلمات ثم اضغط موقرت. الكلمات غير المعلّمة": "Highlight words then click a MOGRT. Unmarked words",
+        "عادي": "Regular",
+        "عدد أسطر السبتايتل": "Number of subtitle lines",
+        "عدد أسطر الموقرت": "Number of MOGRT lines",
+        "عطّل (لا تحذف) موقرتَي التاريخ والمعلومات في الأسفل ليُفعَّلا يدوياً عند الحاجة": "Disable (don't delete) the date & lower-info MOGRTs so they can be enabled manually when needed",
+        "عطّل موقرت المصدر أيضاً": "Disable the source MOGRT too",
+        "فاصل بين الفيديوهات (ث)": "Gap between videos (s)",
+        "في هذا السكربت ضيف/مقابلة فعلاً (فعّلها بس إذا متأكد، وإلا ما ينزل اسم ضيف أبداً)": "This script genuinely has a guest/interview (only enable if you're sure, otherwise no guest name is ever placed)",
+        "قصّ الصوت وإزاحته عند كل مقابلة": "Trim and shift the audio at every interview",
+        "قوالب السكربت": "Script templates",
+        "قوالب المكتبة (احتياطي)": "Library templates (fallback)",
+        "كابشن حسب التعليم فقط": "Caption by highlighting only",
+        "كابشن لكل النص (حتى تحت الموقرت)": "Caption for all the text (even under the MOGRT)",
+        "كشيدة خفيفة على الأسطر الأقصر لتتناسق الأسطر": "Light kashida on shorter lines so the lines line up",
+        "كشيدة لموازنة أسطر الموقرت": "Kashida to balance the MOGRT lines",
+        "كلمة بكلمة": "Word by word",
+        "كلمتان": "Two words",
+        "لم يتم اختيار ملف": "No file chosen",
+        "لو الفراغ بين عنصرين أقل من هذا، يلتصقان بدون فراغ بينهما. قيمة كبيرة تخلي الموقرتات ملتصقة ببعضها وما تقدر تطوّلها بالسحب على التايملاين.": "If the gap between two items is less than this, they're joined with no gap between them. A large value makes the MOGRTs stick together and you won't be able to lengthen them by dragging on the timeline.",
+        "لو ما تبي المطابقة التلقائية: قسّم النص، ضع ماركر (M) عند بداية كل سبتايتل، ثم اضغط هذا الزر.": "If you don't want automatic matching: split the text, place a marker (M) at the start of each subtitle, then click this button.",
+        "لون الإضافة": "Extension color",
+        "متساوية": "Equal",
+        "مثال: australia-sanctions.mp4": "Example: australia-sanctions.mp4",
+        "مجلد خاص باسم السيكونس الحالية (داخل مجلد المشروع)": "A dedicated folder named after the current sequence (inside the project folder)",
+        "محاذاة دقيقة إضافية (نموذج MMS متعدد اللغات): جارِ الفحص…": "Extra precise alignment (multilingual MMS model): checking…",
+        "محرك المطابقة": "Matching engine",
+        "مسار ملف الـ JSON": "Path to the JSON file",
+        "مطابقة دقيقة (كشف الصمت + تحسين الحدود)": "Precise matching (silence detection + boundary refinement)",
+        "مفتاح Gemini API": "Gemini API key",
+        "مكان التنظيم": "Organization location",
+        "ملف كوكيز للمواقع التي تطلب تسجيل دخول (إنستغرام…)": "Cookies file for sites that require login (Instagram…)",
+        "من البداية (يحافظ على نهايته)": "From the start (keeps its end)",
+        "منشئ السبتايتل": "Subtitle Builder",
+        "منشئ السبتايتل — نسخة خاصة": "Subtitle Builder — Special Edition",
+        "نزّل الجزء المطلوب فقط من الفيديو (أسرع، يحتاج ffmpeg)": "Download only the needed part of the video (faster, needs ffmpeg)",
+        "نزّل الفيديو بنفسك وأضِفه للمشروع (من رويترز/AFP أو أي مصدر لا تدعمه الإضافة تلقائياً)، ثم اكتب اسم الملف هنا.": "Download the video yourself and add it to the project (from Reuters/AFP or any source the extension doesn't support automatically), then type the file name here.",
+        "نزّل الكل (كابشن حسب التعليم + موقرتات)": "Place everything (caption by highlighting + MOGRTs)",
+        "نزّل روابط فيسبوك / إنستغرام / تويتر / تيك توك تلقائياً": "Download Facebook / Instagram / Twitter / TikTok links automatically",
+        "نسخ الأوامر": "Copy commands",
+        "نفّذ الترتيب": "Run the organization",
+        "نموذج المطابقة": "Matching model",
+        "هايلايت": "Highlight",
+        "هرم (الأقصر فوق)": "Pyramid (shortest on top)",
+        "هرم مقلوب (الأطول فوق)": "Inverted pyramid (longest on top)",
+        "واجهة الريل المخصصة قيد الإعداد. أرسل لي نموذج سكربت ومشروعاً لهذا النوع لأبنيها على أسلوبك.": "The dedicated Reel interface is still being built. Send me a sample script and project for this type so I can build it to your style.",
+        "وقفة بين الأسطر (ث)": "Pause between lines (s)",
+        "وقفة تقطع السبتايتل (ث)": "Pause that splits a subtitle (s)",
+        "يسار %": "Left %",
+        "يطابق الصوت ثم يحلل النص ويضع الموقرتات والمصادر والتعريفات والسبتايتل كلها": "Matches the audio, then analyzes the text and places the MOGRTs, sources, titles, and subtitles — all of it",
+        "يمين %": "Right %",
+        "ينسخ السيكونس النشط حالياً (بكل ما فيه) باسمه + «الآن»، ويلوّن عناوينه أحمر ويبدّل شعار Logo AJA إلى AJA NOW — بدون أي تغيير على الفيديو أو النصوص أو التوقيت.": "Copies the currently active sequence (with everything in it) under its name + \"Now\", colors its titles red, and swaps the AJA logo for AJA NOW — with no change to the video, text, or timing.",
+        "ينسخ الموقرتات المرفقة داخل الإضافة إلى مجلد قوالب بريمير على هذا الجهاز": "Copies the MOGRTs bundled with the extension into Premiere's templates folder on this device",
+        "يُستخدم فقط إن لم تنزّل الصوت من اللوحة": "Used only if you didn't download the audio from the panel",
+        "١. طابق ونزّل الكابشن كامل": "1. Match & place the full caption",
+        "٢. نزّل الموقرتات": "2. Place the MOGRTs",
+        "— تُختار تلقائياً من الموقرتات الموجودة، وتنزل مع زر «طابق»، ويمكنك التغيير.": "— chosen automatically from the available MOGRTs, placed along with the \"Match\" button, and you can change them.",
+        "↶ تراجع": "↶ Undo",
+        "↶ سجلّ الأعمال السابقة…": "↶ Previous projects log…",
+        "↻ اقرأ المحدد": "↻ Read selection",
+        "↻ مسح قوالب بريمير": "↻ Scan Premiere templates",
+        "−٠.٥": "-0.5",
+        "★ المفضلة فقط": "★ Favorites only",
+        "✎ تعديل النص": "✎ Edit text",
+        "✔ تطبيق التعديل": "✔ Apply edit",
+        "✔ طبّق": "✔ Apply",
+        "✨ حلّل النص وأضف الموقرتات": "✨ Analyze text and add MOGRTs",
+        "✨ نفّذ كل شيء تلقائياً": "✨ Do everything automatically",
+        "⟲ النص الأصلي": "⟲ Original text",
+        "⬇ تثبيت المحرك": "⬇ Install the engine",
+        "⬇ ثبّت التحديث": "⬇ Install update",
+        "⬇ ثبّت القوالب المرفقة": "⬇ Install bundled templates",
+        "⬇ ثبّت نموذج المحاذاة": "⬇ Install the alignment model",
+        "🔄 تحقق من تحديث": "🔄 Check for update",
+        "🔴 نسخة أحمر «الآن»": "🔴 Red \"Now\" version",
+        "الإعدادات": "Settings",
+        "لغة الواجهة": "Interface language",
+        "العربية": "Arabic",
+        "المطوّر": "Developer",
+        "عام": "General",
+    };
+
+    var ORIG_LANG = (function () {
+        try { return localStorage.getItem("sb.lang") || "ar" } catch (e) { return "ar" }
+    })();
+
+    function sbTranslateSubtree(root, lang) {
+        if (!root) return;
+        try {
+            var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false),
+                nodes = [],
+                nd;
+            while (nd = walker.nextNode()) nodes.push(nd);
+            nodes.forEach(function (t) {
+                var par = t.parentNode;
+                if (!par || par.tagName === "SCRIPT" || par.tagName === "STYLE") return;
+                var orig = t.__sbOrig != null ? t.__sbOrig : t.nodeValue;
+                t.__sbOrig = orig;
+                var trimmed = orig.trim();
+                if (!trimmed) return;
+                var lead = orig.slice(0, orig.indexOf(trimmed)),
+                    trail = orig.slice(lead.length + trimmed.length);
+                if ("en" === lang && null != SB_EN[trimmed]) t.nodeValue = lead + SB_EN[trimmed] + trail;
+                else t.nodeValue = orig
+            });
+            var withAttrs = [];
+            if (root.nodeType === 1) withAttrs.push(root);
+            if (root.querySelectorAll) withAttrs = withAttrs.concat(Array.prototype.slice.call(root.querySelectorAll("[placeholder],[title]")));
+            withAttrs.forEach(function (el) {
+                ["placeholder", "title"].forEach(function (attr) {
+                    var cur = el.getAttribute && el.getAttribute(attr);
+                    if (null == cur) return;
+                    var key = "__sbOrig_" + attr,
+                        orig = el[key] != null ? el[key] : cur;
+                    el[key] = orig;
+                    "en" === lang && null != SB_EN[orig] ? el.setAttribute(attr, SB_EN[orig]) : el.setAttribute(attr, orig)
+                })
+            })
+        } catch (e) {}
+    }
+
+    var sbCurLang = ORIG_LANG;
+
+    function sbApplyLang(lang) {
+        sbCurLang = lang;
+        try { localStorage.setItem("sb.lang", lang) } catch (e) {}
+        try {
+            document.documentElement.setAttribute("dir", "en" === lang ? "ltr" : "rtl"), document.documentElement.setAttribute("lang", lang)
+        } catch (e) {}
+        sbTranslateSubtree(document.body, lang);
+        try {
+            Array.prototype.slice.call(overlay.querySelectorAll("#sb-lang-btns button")).forEach(function (b) {
+                b.classList.toggle("on", b.getAttribute("data-lang") === lang)
+            })
+        } catch (e) {}
+    }
+
+    try {
+        var mo = new MutationObserver(function (muts) {
+            if ("en" !== sbCurLang) return;
+            muts.forEach(function (m) {
+                m.addedNodes && m.addedNodes.forEach(function (n) {
+                    1 === n.nodeType && sbTranslateSubtree(n, "en")
+                })
+            })
+        });
+        mo.observe(document.body, {
+            childList: !0,
+            subtree: !0
+        })
+    } catch (e) {}
+
+    try {
+        Array.prototype.slice.call(overlay.querySelectorAll("#sb-lang-btns button")).forEach(function (b) {
+            b.onclick = function () {
+                sbApplyLang(b.getAttribute("data-lang"))
+            }
+        })
+    } catch (e) {}
+
+    sbApplyLang(sbCurLang);
 }();

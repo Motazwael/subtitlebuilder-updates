@@ -194,3 +194,25 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .rawcard textarea { width:100%; box-sizing:border-box; margin:3px 0 0; padding:6px 8px; font:inherit; font-size:13px; color:#fff; background:#1c1c1c; border:1px solid var(--line); border-radius:8px; resize:vertical; }
 .rc-pv { margin:2px 0 6px; font-size:11px; color:var(--muted); white-space:pre-wrap; }
+
+/* زر الترس وصندوق الإعدادات الموحّد */
+#sb-gear { flex:none; margin-inline-start:6px; width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:15px; cursor:pointer; line-height:1; }
+#sb-gear:hover { border-color:var(--accent); }
+#sb-settings-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; box-sizing:border-box; }
+#sb-settings-overlay[hidden] { display:none; }
+#sb-settings-modal { width:100%; max-width:480px; max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+#sb-settings-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line); }
+#sb-settings-head h2 { margin:0; font-size:15px; }
+#sb-settings-close { background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; padding:4px; }
+#sb-settings-tabs { display:flex; gap:4px; padding:8px 10px 0; }
+#sb-settings-tabs button { flex:1; padding:7px 4px; font-size:12px; font-weight:600; color:var(--muted); background:var(--card2); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+#sb-settings-tabs button.on { color:var(--on-accent); background:var(--accent); border-color:var(--accent); }
+#sb-settings-body { padding:12px 14px 16px; overflow-y:auto; }
+.sb-tab-panel[hidden] { display:none; }
+.sb-tab-panel details.adv { border:0; margin:0; padding:0; }
+.sb-tab-panel details.adv summary { display:none; }
+#sb-settings-credit, #sb-settings-lang { padding:10px 0; border-bottom:1px solid var(--line); }
+#sb-dev-name { margin:2px 0 0; font-weight:700; letter-spacing:.08em; direction:ltr; text-align:right; color:var(--accent); }
+#sb-lang-btns { display:flex; gap:6px; margin-top:6px; }
+#sb-lang-btns button { flex:1; padding:7px 4px; font-size:12px; font-weight:600; color:var(--muted); background:var(--card2); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+#sb-lang-btns button.on { color:var(--on-accent); background:var(--accent); border-color:var(--accent); }
