@@ -198,6 +198,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* خط تقدّم تنزيل الفيديو — أخضر ليتميّز عن شريط تثبيت نموذج المحاذاة */
 .dlbar .pbar-fill { background:var(--ok); }
 
+/* خيارات بديلة لمّا يفشل التنزيل الآلي: موقع تنزيل سريع، أو رفع ملف من الجهاز */
+.dlfallback { flex-basis:100%; display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.dlfallback button.link { font-size:11px; }
+
 /* زر الترس وصندوق الإعدادات الموحّد */
 #sb-gear { flex:none; margin-inline-start:6px; width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:15px; cursor:pointer; line-height:1; }
 #sb-gear:hover { border-color:var(--accent); }

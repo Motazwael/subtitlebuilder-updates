@@ -2602,6 +2602,48 @@
         var fill = bar.querySelector(".pbar-fill");
         fill && (fill.style.width = Math.max(0, Math.min(100, pct || 0)) + "%")
     }
+    // اسم المنصة من الرابط — نعرضه بدل اسم طريقة الدخول (بملف الكوكيز/بدون تسجيل دخول...)
+    // اللي مش مفهوم لمستخدم عادي، وبنستثني ذكر الكوكيز إلا لإنستغرام/فيسبوك وين فعلاً بتُستخدم.
+    function sbPlatformName(u) {
+        u = String(u || "");
+        return /instagram\.com/i.test(u) ? "إنستغرام" : /facebook\.com|fb\.watch/i.test(u) ? "فيسبوك" : /(?:twitter|x)\.com/i.test(u) ? "تويتر/X" : /tiktok\.com/i.test(u) ? "تيك توك" : /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(u) ? "تيليغرام" : "الفيديو"
+    }
+    var sbFastSites = {
+        "إنستغرام": "https://snapinsta.app/",
+        "فيسبوك": "https://fdown.net/",
+        "تويتر/X": "https://twittervideodownloader.com/",
+        "تيك توك": "https://ssstik.io/"
+    };
+    function sbCopyText(t) {
+        try {
+            var ta = document.createElement("textarea");
+            ta.value = t, ta.style.position = "fixed", ta.style.opacity = "0", document.body.appendChild(ta), ta.select(), document.execCommand("copy"), document.body.removeChild(ta)
+        } catch (e) {}
+    }
+    // يظهر جنب حالة التنزيل عند الفشل: خيار جرّب موقع تنزيل سريع (لو موجود للمنصة)، وخيار
+    // ارفع فيديو جاهز من الجهاز بدل التنزيل الآلي — onPick(path) بيكمّل الاستيراد.
+    function sbDlFallback(el, url, onPick) {
+        if (!el || !el.parentNode) return;
+        var wrap = el.parentNode.querySelector(".dlfallback");
+        wrap || (wrap = document.createElement("div"), wrap.className = "dlfallback", el.parentNode.appendChild(wrap));
+        wrap.innerHTML = "";
+        var plat = sbPlatformName(url),
+            fast = sbFastSites[plat];
+        if (fast) {
+            var b1 = document.createElement("button");
+            b1.type = "button", b1.className = "link", b1.textContent = "↗ جرّب تنزيل " + plat + " من موقع آخر", b1.onclick = function() {
+                sbCopyText(url);
+                try {
+                    Ct(fast)
+                } catch (e) {}
+            }, wrap.appendChild(b1)
+        }
+        var b2 = document.createElement("button");
+        b2.type = "button", b2.className = "link", b2.textContent = "⬆ ارفع الفيديو من جهازك", b2.onclick = function() {
+            var picked = b(!1, "اختر ملف الفيديو الذي نزّلته يدوياً", ["mp4", "mov", "mkv", "webm", "m4v", "avi"]);
+            picked && picked[0] && onPick && onPick(picked[0])
+        }, wrap.appendChild(b2)
+    }
     var Tt = {
         no: ["بدون تسجيل دخول", []],
         ff: ["بحساب فايرفوكس", ["--cookies-from-browser", "firefox"]],
@@ -2689,49 +2731,70 @@
 
     function Ht(t, a) {
         c.dl = c.dl || {};
-        var i = {};
+        var dlmap = {};
         try {
-            i = JSON.parse(p("sb.dlmap", "{}")) || {}
+            dlmap = JSON.parse(p("sb.dlmap", "{}")) || {}
         } catch (t) {}
         if (c.dl[t.url]) return c.dl[t.url];
-        if (i[t.url] && e.existsSync(i[t.url])) return a && (a.textContent = "✓ موجود مسبقاً"), c.dl[t.url] = !0, Promise.resolve();
+        if (dlmap[t.url] && e.existsSync(dlmap[t.url])) return a && (a.textContent = "✓ موجود مسبقاً"), c.dl[t.url] = !0, Promise.resolve();
         var o = function(t) {
             a && (a.textContent = t)
         };
         return o("في الانتظار…"), c.dlChain = (c.dlChain || Promise.resolve()).then(async function() {
+            var plat = sbPlatformName(t.url),
+                ffp, u, dlDir;
+
+            async function finishWithFile(filePath) {
+                try {
+                    if (!filePath || !e.existsSync(filePath)) return void f("الملف غير موجود.", "e");
+                    o("جاري المعالجة…");
+                    var fp = await Ft(filePath, ffp, o);
+                    dlmap[t.url] = fp, h("sb.dlmap", JSON.stringify(dlmap));
+                    var S2 = await m("sb_importFile", fp, u ? "01_Video" : "");
+                    c.dl[t.url] = !0, sbDlBar(a, 0, !0), o(S2 && S2.ok ? "✓ نُزّل واستُورد" : "✓ تمّ"), f("استُخدم الملف اللي اخترته" + (S2 && S2.ok ? " واستُورد للمشروع." : "."), "ok");
+                    if (a && a.parentNode) {
+                        var errDiv = a.parentNode.querySelector(".dlerr");
+                        errDiv && errDiv.parentNode.removeChild(errDiv);
+                        var fbDiv = a.parentNode.querySelector(".dlfallback");
+                        fbDiv && fbDiv.parentNode.removeChild(fbDiv)
+                    }
+                } catch (err) {
+                    f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
+                }
+            }
             try {
                 var s = await Lt(!1),
                     l = null;
                 try {
                     l = await m("sb_info")
                 } catch (t) {}
-                var u = l && l.ok && l.projectPath ? r.dirname(l.projectPath) : "",
-                    d = u ? r.join(u, "01_Video") : r.join(n.homedir(), "Downloads", "SubtitleBuilder_Materials");
+                u = l && l.ok && l.projectPath ? r.dirname(l.projectPath) : "",
+                dlDir = u ? r.join(u, "01_Video") : r.join(n.homedir(), "Downloads", "SubtitleBuilder_Materials");
                 try {
-                    e.mkdirSync(d, {
+                    e.mkdirSync(dlDir, {
                         recursive: !0
                     })
                 } catch (t) {}
-                var p = Q(["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]),
-                    v = ["--no-playlist", "--no-warnings", "-o", r.join(d, "%(title).50B-%(id)s.%(ext)s"), "--print", "after_move:filepath"];
-                v = Bt(p).concat(v);
+                ffp = Q(["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]);
+                var v = ["--no-playlist", "--no-warnings", "-o", r.join(dlDir, "%(title).50B-%(id)s.%(ext)s"), "--print", "after_move:filepath"];
+                v = Bt(ffp).concat(v);
                 var g = It(t.url),
                     w = null,
                     b = [],
                     x = !1;
-                g = Dt(g);
+                g = /instagram\.com|facebook\.com|fb\.watch/i.test(t.url) ? Dt(g) : g;
                 for (var k = 0; k < g.length && null == w; k++) {
-                    o("جاري التنزيل… (" + g[k][0] + ")");
+                    o("جاري التنزيل… " + plat + ("بملف الكوكيز" === g[k][0] ? " (بملف الكوكيز)" : ""));
                     try {
                         w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
-                            o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), sbDlBar(a, pc)
+                            o("جاري التنزيل… " + plat + ("بملف الكوكيز" === g[k][0] ? " (بملف الكوكيز)" : "") + " — " + pc + "٪"), sbDlBar(a, pc)
                         })
                     } catch (e) {
                         if (b.push(g[k][0] + ": " + String(e.message).slice(0, 260)), !x && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && s === _t) {
                             x = !0, o("تحديث الأداة…");
                             try {
                                 await jt(s, ["-U"]), w = await jt(s, g[k][1].concat(v, [Ot(t.url)]), function(pc) {
-                                    o("جاري التنزيل… (" + g[k][0] + ") — " + pc + "٪"), sbDlBar(a, pc)
+                                    o("جاري التنزيل… " + plat + ("بملف الكوكيز" === g[k][0] ? " (بملف الكوكيز)" : "") + " — " + pc + "٪"), sbDlBar(a, pc)
                                 })
                             } catch (t) {
                                 b.push("بعد التحديث: " + String(t.message).slice(0, 120))
@@ -2742,7 +2805,7 @@
                 if (null == w) {
                     var y = "";
                     try {
-                        y = await Pt(t.url, d, 1, o)
+                        y = await Pt(t.url, dlDir, 1, o)
                     } catch (t) {
                         b.push("بديل: " + String(t.message || t).slice(0, 160))
                     }
@@ -2753,9 +2816,9 @@
                     return t.trim()
                 }).filter(Boolean).pop();
                 if (!E || !e.existsSync(E)) throw new Error("لم يظهر الملف بعد التنزيل.");
-                E = await Ft(E, p, o), i[t.url] = E, h("sb.dlmap", JSON.stringify(i));
+                E = await Ft(E, ffp, o), dlmap[t.url] = E, h("sb.dlmap", JSON.stringify(dlmap));
                 var S = await m("sb_importFile", E, u ? "01_Video" : "");
-                c.dl[t.url] = !0, sbDlBar(a, 0, !0), o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + d + ")."), "ok")
+                c.dl[t.url] = !0, sbDlBar(a, 0, !0), o(S && S.ok ? "✓ نُزّل واستُورد" : "✓ نُزّل"), f("نُزّل " + r.basename(E) + (S && S.ok ? " واستُورد للمشروع." : " (في " + dlDir + ")."), "ok")
             } catch (e) {
                 sbDlBar(a, 0, !0);
                 o("⬇ أعد المحاولة");
@@ -2766,6 +2829,7 @@
                     var M = a.parentNode.querySelector(".dlerr") || document.createElement("div");
                     M.className = "dlerr", M.style.cssText = "flex-basis:100%;font-size:11px;color:#ff8a80;direction:ltr;text-align:left;word-break:break-all", M.textContent = C, M.parentNode || a.parentNode.appendChild(M)
                 }
+                sbDlFallback(a, t.url, finishWithFile);
                 f("تعذّر تنزيل " + t.url.slice(0, 70) + ": " + C, "e")
             }
         }), c.dlChain
@@ -4070,23 +4134,37 @@
                 y = Math.max(1, t.pi || 1),
                 E = ["--playlist-items", String(y), "--no-warnings", "-o", r.join(b, "%(title).50B-%(id)s" + (y > 1 ? "-" + y : "") + k + ".%(ext)s"), "--print", "after_move:filepath"];
             E = Bt(x).concat(E), l && (E = ["--download-sections", "*" + s + "-" + c, "--force-keyframes-at-cuts"].concat(E));
+            var plat2 = sbPlatformName(t.url);
+
+            async function onManualPick(filePath) {
+                try {
+                    if (!filePath || !e.existsSync(filePath)) return void f("الملف غير موجود.", "e");
+                    a("جاري المعالجة…");
+                    var fp = await Ft(filePath, x, a);
+                    o[u] = fp, h("sb.dlmap", JSON.stringify(o));
+                    a("✓ تم حفظ الملف — اضغط «ابنِ الخام على التايم لاين» مرة ثانية لإكمال البناء", "ok");
+                    f("حُفظ الفيديو اللي رفعته يدوياً. اضغط ابنِ الخام على التايم لاين مرة ثانية لإكمال البناء بهذا الملف.", "ok")
+                } catch (err) {
+                    f("تعذّر استخدام الملف المختار: " + String(err.message || err).slice(0, 200), "e")
+                }
+            }
             var S = It(t.url),
                 C = null,
                 M = [],
                 N = !1;
-            S = Dt(S);
+            S = /instagram\.com|facebook\.com|fb\.watch/i.test(t.url) ? Dt(S) : S;
             for (var _ = 0; _ < S.length && null == C; _++) {
-                a("جاري التنزيل… (" + S[_][0] + ")");
+                a("جاري التنزيل… " + plat2 + ("بملف الكوكيز" === S[_][0] ? " (بملف الكوكيز)" : ""));
                 try {
                     C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
-                        a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), sbDlBar(t._st, pc)
+                        a("جاري التنزيل… " + plat2 + ("بملف الكوكيز" === S[_][0] ? " (بملف الكوكيز)" : "") + " — " + pc + "٪"), sbDlBar(t._st, pc)
                     })
                 } catch (e) {
                     if (M.push(S[_][0] + ": " + String(e.message).slice(0, 260)), !N && /unsupported url|unable to extract|nsig|HTTP Error 4(0[0-3]|29)|sign in|login required|not available|cookies|consent|rate-?limit|precondition|JSON metadata/i.test(String(e.message)) && v === _t) {
                         N = !0, a("تحديث الأداة…");
                         try {
                             await jt(v, ["-U"]), C = await jt(v, S[_][1].concat(E, [Ot(t.url)]), function(pc) {
-                                a("جاري التنزيل… (" + S[_][0] + ") — " + pc + "٪"), sbDlBar(t._st, pc)
+                                a("جاري التنزيل… " + plat2 + ("بملف الكوكيز" === S[_][0] ? " (بملف الكوكيز)" : "") + " — " + pc + "٪"), sbDlBar(t._st, pc)
                             })
                         } catch (t) {
                             M.push("بعد التحديث: " + String(t.message).slice(0, 120))
@@ -4105,6 +4183,7 @@
                     var joined = M.join(" | "),
                         hasCookieFile2 = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
                     if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
+                    sbDlBar(t._st, 0, !0), sbDlFallback(t._st, t.url, onManualPick);
                     throw new Error(joined)
                 }
                 C = A, l = !1
