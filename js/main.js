@@ -5923,6 +5923,10 @@
         if (!document.getElementById("brand-logo")) return; // مش نسخة كيمو
         var h1 = document.querySelector("header h1");
         if (h1) h1.textContent = "منشئ الخام";
+        // شرائح "الصوت / المطابقة / الموقرتات" مالها داعي بنسخة كيمو (خام بس) — نشيلها
+        // بهاد النسخة تحديداً وما منأثر على النسخة الرسمية (reel/quote) يلي لسا محتاجتها.
+        var chips = document.getElementById("chips");
+        if (chips) chips.remove();
     } catch (e) {}
 }();
 
