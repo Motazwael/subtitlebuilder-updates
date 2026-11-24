@@ -3725,7 +3725,7 @@
             ee(t.getAttribute("data-mode"))
         }
     }), ee(p("sb.mode", "vg")), i("raw-tpl-r") && (i("raw-tpl-r").onclick = function() {
-        Ne()
+        Ne(!0)
     }));
     var ne = {
         clips: []
@@ -4799,7 +4799,7 @@
         } else f("أضف فيديو واحداً على الأقل (رابط أو ملف).", "w")
     }
     var Me = [];
-    async function Ne() {
+    async function Ne(showMsg) {
         var t = i("raw-tpl");
         if (t) {
             var e = null;
@@ -4822,8 +4822,11 @@
                         return e.id === t.value
                     })[0];
                     e && h("sb.rawtpl", e.name)
-                }
-            }
+                };
+                // مهم: قبل هيك لو فشل الطلب كان ما في أي رسالة إطلاقاً — تحديث "فاشل بصمت"
+                // صعب تشخيصه. هلق منأكد للمستخدم عدد السيكونسات يلي ظهرت فعلياً كل ضغطة.
+                showMsg && f(Me.length ? "✓ تحديث القائمة: لقيت " + Me.length + " سيكونس" + (e.skipped ? " (تجاهلت " + e.skipped + " سيكونس فيها مشكلة)." : ".") : "ما في ولا سيكونس بالمشروع حالياً.", Me.length ? "ok" : "w")
+            } else showMsg && f("تعذّر تحديث قائمة السيكونسات" + (e && e.error ? ": " + String(e.error).slice(0, 160) : " — جرّب تفتح سيكونس أولاً.") + "", "e")
         }
     }
     async function _e() {

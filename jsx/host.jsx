@@ -48,9 +48,18 @@ function _sbZero(seq) {
 // Sequence facts: frame rate, start offset, playhead position (seconds)
 function sb_listSequences() {
   try {
-    var out = [], i, s;
-    for (i = 0; i < app.project.sequences.numSequences; i++) { s = app.project.sequences[i]; out.push({ name: String(s.name), id: String(s.sequenceID) }); }
-    return _sbJson({ ok: true, list: out });
+    var out = [], i, s, skipped = 0;
+    // لو سيكونس وحدة بالمشروع فيها مشكلة (تالفة/معطوبة) وطلعت خطأ لما نوصل لاسمها أو
+    // معرّفها، كان قبل هيك بيوقف كل الحلقة ويرجع فشل كامل (ok:false) من غير أي سيكونس
+    // إطلاقاً — يعني سيكونس وحدة مشكلتها بتخفي كل باقي السيكونسات عن القائمة. هلق
+    // منحط try/catch حوالين كل سيكونس لحالها، فلو وحدة فشلت منتخطاها ومنكمل بالباقي.
+    for (i = 0; i < app.project.sequences.numSequences; i++) {
+      try {
+        s = app.project.sequences[i];
+        out.push({ name: String(s.name), id: String(s.sequenceID) });
+      } catch (eItem) { skipped++; }
+    }
+    return _sbJson({ ok: true, list: out, skipped: skipped });
   } catch (e) { return _sbJson({ ok: false, error: String(e) }); }
 }
 
