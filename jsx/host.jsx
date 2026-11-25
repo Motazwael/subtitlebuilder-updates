@@ -942,8 +942,11 @@ function sb_fillRaw(spec) {
           if (key === 'title1') { want = spec.title; s0 = 0; s1 = spec.sw; }
           else if (key === 'title2') { want = spec.sub; s0 = spec.sw; }
           else if (key === 'src') { want = spec.src ? [spec.src] : null; s0 = 0; s1 = spec.sw; }
-          else if (key === 'loc') { want = spec.date ? [spec.date] : null; s0 = spec.sw; }
-          else if (key === 'date') { want = spec.src ? [spec.src] : null; s0 = spec.sw; }
+          // ملاحظة: بالمكتبة الفعلية عند معتز، موقرت "Location Date" (key: loc) بيعرض اسم
+          // المصدر، وموقرت "Info Date" (key: date) هو يلي بيعرض التاريخ فعلياً — عكس ما كان
+          // بالكود قبل هيك (كانت القيمتين معكوسين).
+          else if (key === 'loc') { want = spec.src ? [spec.src] : null; s0 = spec.sw; }
+          else if (key === 'date') { want = spec.date ? [spec.date] : null; s0 = spec.sw; }
           var keepOff = (key === 'loc' || key === 'date' || key === 'src');
           if (!want || !want.length) {
             if (keepOff) { try { ti.disabled = true; r.note = 'disabled (empty)'; } catch (ed) { r.note = 'empty'; } out.push(r); continue; }
@@ -964,7 +967,10 @@ function sb_fillRaw(spec) {
             if (key === 'title2') return n ? (want[n - 1] || '') : (spec.loc || '');
             return want[0];
           } });
-          if (((key === 'loc' || key === 'date') && spec.disableLow) || (key === 'src' && spec.disableSrc)) { try { ti.disabled = true; r.note = 'disabled'; } catch (ed2) { r.note = 'could not disable'; } }
+          // "date" (Info Date) ما منطفيه هون أبداً — لو وصلنا هون أصلاً معناها عندنا تاريخ حقيقي
+          // (غير هيك كان انطفى وطلع من الدالة بالأعلى لما want كانت فاضية)، فما في داعي داعي نطفيه
+          // ثاني مرة بس لأنه مفتاح "تعطيل الشريط السفلي" العام مفعّل — المحرر طلب التاريخ فعلياً.
+          if ((key === 'loc' && spec.disableLow) || (key === 'src' && spec.disableSrc)) { try { ti.disabled = true; r.note = 'disabled'; } catch (ed2) { r.note = 'could not disable'; } }
         } catch (e) { r.ok = false; r.note = String(e); }
         out.push(r);
       }
