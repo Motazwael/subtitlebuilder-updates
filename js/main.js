@@ -1900,7 +1900,7 @@
         var t = !!c.times,
             e = c.blocks.length > 0,
             n = lt().length > 0 || c.sources.length > 0 || c.guests.length > 0;
-        i("align").disabled = c.busy, i("build").disabled = !t || !e || c.busy, i("place").disabled = !t || !n || c.busy, i("all").disabled = !t || !e && !n || c.busy, i("c-audio").classList.toggle("on", !!c.audio), i("st1").classList.toggle("done", !!c.audio), i("c-sync").classList.toggle("on", t), i("st2").classList.toggle("done", t), i("c-marks").classList.toggle("on", c.marks.length > 0), i("st3").classList.toggle("done", c.marks.length > 0)
+        i("align") && (i("align").disabled = c.busy), i("build") && (i("build").disabled = !t || !e || c.busy), i("place") && (i("place").disabled = !t || !n || c.busy), i("all") && (i("all").disabled = !t || !e && !n || c.busy), i("c-audio") && i("c-audio").classList.toggle("on", !!c.audio), i("st1") && i("st1").classList.toggle("done", !!c.audio), i("c-sync") && i("c-sync").classList.toggle("on", t), i("st2") && i("st2").classList.toggle("done", t), i("c-marks") && i("c-marks").classList.toggle("on", c.marks.length > 0), i("st3") && i("st3").classList.toggle("done", c.marks.length > 0)
     }
 
     function ft() {
