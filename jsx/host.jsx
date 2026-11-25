@@ -961,6 +961,11 @@ function sb_fillRaw(spec) {
           // back-to-back (spec.end is always the end of the LAST one, so the work area still spans all of them).
           var lines = want.length;
           if (key === 'src' && spec.icon != null && spec.icon >= 0) { try { r.icon = _sbSetIcon(ti, spec.icon); } catch (ei) { r.icon = 'icon: ' + ei; } }
+          // موقرت "Info Date" (وكمان "Location Date") عندهم قائمة "الأيقونة" المشتركة Location/Date/Source،
+          // وبتضل محتفظة بآخر قيمة تم اختيارها فيها يدوياً من قبل (أحياناً بتكون واقفة على Location أو Source
+          // من نسخة سابقة). بما إننا هون واثقين إنه عندنا تاريخ حقيقي، لازم نفرض الأيقونة على "Date" (الخيار
+          // الثاني بالقائمة، index=1) بدل ما نعتمد على القيمة القديمة المتروكة بالموقرت.
+          if (key === 'date' && want && want.length) { try { r.icon = _sbSetIcon(ti, 1); } catch (ei2) { r.icon = 'icon: ' + ei2; } }
           r.log = setText(ti, { color: key === 'title2' && spec.color2 != null && spec.color2 >= 0 ? spec.color2 : null, lines: (key === 'title1' || key === 'title2') ? want.length : 0, text: function (dn, pos) {
             var n = lineNo(dn);
             if (key === 'title1') return n ? (want[n - 1] || '') : null;
