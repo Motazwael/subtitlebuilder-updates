@@ -4243,7 +4243,7 @@
                 _st: t._st,
                 pi: 1,
                 sub: ""
-            }).then(function() {
+            }, !0).then(function() {
                 ok++
             }).catch(function() {}).then(function() {
                 // إشعار واضح لما يخلص التحميل بالخلفية — حتى يعرف المستخدم إنه جاهز
@@ -4367,7 +4367,7 @@
         }
     }
 
-    function Se(t) {
+    function Se(t, silent) {
         // نفس ملاحظة Ht() فوق: لازم نمتص أي رفض سابق بالسلسلة المشتركة قبل ما نضيف
         // تنزيل جديد، وإلا أي فشل قديم (حتى لفيديو/رابط تاني كلياً) بيفشّل كل تنزيل
         // جاي بعده تلقائياً بنفس الخطأ القديم، من غير ما ينفّذ أي محاولة فعلية جديدة.
@@ -4376,6 +4376,14 @@
                     t._st && (t._st.textContent = e, t._st.className = "rc-st" + (n ? " " + n : ""))
                 },
                 o = {};
+            // لو هاد التنزيل صار بالخلفية تلقائياً بعد تحليل السكربت مباشرة (silent — قبل
+            // ما يضغط المحرر «ابنِ الخام» أصلاً وقبل ما يصير عنده فرصة يظبط القص/الصوت)،
+            // ما منقاطعه بنافذة منبثقة لازم يتفاعل معها فوراً — بس منسيب زر «ارفع من جهازك»
+            // ثابت جنب الكليب يستخدمه وقته. النافذة المنبثقة الحقيقية تضل للمحاولة الفعلية
+            // وقت الضغط على «ابنِ الخام».
+            function showFail(onUpload, customMsg) {
+                silent ? sbDlFallback(t._st, t.url, onUpload) : sbDlFailModal(t.url, onUpload, function() { sbDlFallback(t._st, t.url, onUpload) }, customMsg)
+            }
             try {
                 o = JSON.parse(p("sb.dlmap", "{}")) || {}
             } catch (t) {}
@@ -4435,7 +4443,7 @@
                 modalShown = !0;
                 a("⛔ يحتاج تسجيل دخول (" + agencyName + ")");
                 sbDlBar(t._st, 0, !0);
-                sbDlFailModal(t.url, onManualPick, function() {}, "⛔ هذا الرابط من " + agencyName + " ويحتاج تسجيل دخول بحساب مشترك بالوكالة — ما بقدر أحمّله تلقائياً.<br>نزّل الفيديو من حسابك على " + agencyName + " وارفعه من هون.");
+                showFail(onManualPick, "⛔ هذا الرابط من " + agencyName + " ويحتاج تسجيل دخول بحساب مشترك بالوكالة — ما بقدر أحمّله تلقائياً.<br>نزّل الفيديو من حسابك على " + agencyName + " وارفعه من هون.");
                 throw new Error("رابط " + agencyName + " يحتاج تسجيل دخول — نزّله من حسابك وارفعه يدوياً.")
             }
             // رابط جوجل درايف (أحياناً المحرر بيضيف رابط درايف بدل رابط منصة تواصل) — yt-dlp
@@ -4467,7 +4475,7 @@
                     }
                 } catch (gErr) {
                     modalShown = !0, sbDlBar(t._st, 0, !0);
-                    sbDlFailModal(t.url, onManualPick, function() {}, "⚠ تعذّر تحميل الفيديو من جوجل درايف تلقائياً: " + String(gErr && (gErr.message || gErr)).slice(0, 200) + "<br>تأكد إن صلاحية مشاركة الملف «أي شخص لديه الرابط» (مش محصورة بأشخاص معيّنين)، ثم أعد المحاولة، أو ارفع الفيديو من جهازك مباشرة.");
+                    showFail(onManualPick, "⚠ تعذّر تحميل الفيديو من جوجل درايف تلقائياً: " + String(gErr && (gErr.message || gErr)).slice(0, 200) + "<br>تأكد إن صلاحية مشاركة الملف «أي شخص لديه الرابط» (مش محصورة بأشخاص معيّنين)، ثم أعد المحاولة، أو ارفع الفيديو من جهازك مباشرة.");
                     throw new Error("جوجل درايف: " + String(gErr && (gErr.message || gErr)).slice(0, 200))
                 }
             }
@@ -4527,7 +4535,7 @@
                     var joined = M.join(" | "),
                         hasCookieFile2 = !!(i("raw-cookies") && i("raw-cookies").value || p("sb.cookies", "")).trim();
                     if (/instagram\.com|facebook\.com|fb\.watch/i.test(t.url) && !hasCookieFile2 && /sign in|login|rate-?limit|429|403|private|restricted|consent|cookies|not available|unable to extract|HTTP Error 4\d\d/i.test(joined)) joined += " — إنستغرام/فيسبوك غالباً بيحتاج تسجيل دخول لتنزيل هذا الفيديو. جرّب إضافة متصفح مثل «Get cookies.txt LOCALLY» لتصدير ملف cookies.txt وحدّده من حقل «ملف كوكيز».";
-                    modalShown = !0, sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
+                    modalShown = !0, sbDlBar(t._st, 0, !0), showFail(onManualPick);
                     throw new Error(joined)
                 }
                 C = A, l = !1
@@ -4550,7 +4558,7 @@
             if (!L || !e.existsSync(L)) {
                 var finalMsg = "لم يظهر الملف بعد التنزيل. " + String(C).replace(/\s+/g, " ").slice(-160);
                 /(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me/i.test(t.url) && (finalMsg += " — تيليغرام غالباً بيحتاج حجم الفيديو يكون أصغر من حد المعاينة (حوالي ٢٠ ميغا) حتى تقدر الأداة تشوفه بدون تسجيل دخول. لو الفيديو أكبر من هيك ما في طريقة آلية تجيبه — نزّله يدوياً من تطبيق تيليغرام نفسه وارفعه بزر «ارفع الفيديو من جهازك» تحت.");
-                modalShown = !0, sbDlBar(t._st, 0, !0), sbDlFailModal(t.url, onManualPick, function() {});
+                modalShown = !0, sbDlBar(t._st, 0, !0), showFail(onManualPick);
                 throw new Error(finalMsg)
             }
             var I = C.split("\n").filter(function(t) {
@@ -4568,7 +4576,7 @@
                 // نفس نافذة «تعذّر التحميل» دايماً، حتى لو السبب غير متوقع.
                 if (!modalShown) {
                     sbDlBar(t._st, 0, !0);
-                    sbDlFailModal(t.url, onManualPick, function() {});
+                    showFail(onManualPick);
                 }
                 throw new Error(String(outerErr && (outerErr.message || outerErr)).slice(0, 220))
             }
