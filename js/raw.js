@@ -27,7 +27,16 @@
         // سطر عنوان فرعي داخل خانة اللينك نفسها بيقول "صور للثامبنيل" (أو شبيه) — أي رابط بعده مش رابط
         // الفيديو الأساسي، هو رابط صور مخصص بس لسحب الثامبنيل منه. لازم ننحفظ لحاله، مش نلخبط فيه رابط الفيديو
         // ولا نضيفه لأي حقل تاني (هاد بالضبط كان سبب ضياع/خربطة روابط فيديوهات تليجرام).
-        thumbLabelRe = /^(?:صُو?ر(?:ة)?\s*(?:لل?)?\s*(?:ال)?ث[اأ]مب[ـ]?نيل|thumbnail\s*(?:images?|photos?|pics?)?)\s*[:：]?\s*$/i;
+        // ملاحظة: كان فيها حرف تشكيل زايد (ُ) بعد "ص" بالنسخة القديمة من هالنمط، فكانت ما
+        // بتنطبق أبداً على نص عادي متكتوب بدون تشكيل زي "صور للثامبنيل" — صلحناها.
+        thumbLabelRe = /^(?:صور(?:ة)?\s*(?:لل?)?\s*(?:ال)?ث[اأ]مب[ـ]?نيل|thumbnail\s*(?:images?|photos?|pics?)?)\s*[:：]?\s*$/i,
+        // سطر تاريخ الواقعة (مثلاً "كتابة تاريخ الواقعة .. 20 - 11 - 2026") فيه أرقام مفصولة بشرطة
+        // زي 20 - 11 بالظبط متل صيغة مدى الوقت (من-لـ)، فكان عم ينلقط غلط كمدى قص وهمي (كليب رابع
+        // زيادة من غير قصد). أي سطر فيه كلمة "تاريخ" أو سنة بصيغة ١٩xx/٢٠xx منستثنيه من فحص مدى الوقت.
+        dateLikeRe = /تاريخ|\b(?:19|20)\d{2}\b/,
+        // سطر "علامة الكاميرا" (أو شبيه) هو بس تسمية/label مش جزء من قيمة المصدر الفعلية —
+        // زي platformOnly بالظبط، منتجاهله لحاله وما منضمّه لقيمة حقل "المصدر".
+        creditLabelOnlyRe = /^\s*(?:علامة\s*ال?كاميرا|كاميرا\s*(?:المصدر)?|camera\s*(?:tag|mark|credit)?)\s*[:：]?\s*$/i;
 
     function u(e) {
         return String(e).replace(/^https?:\/\//i, "").split(/[\/?#]/)[0].replace(/^www\./, "").toLowerCase()
@@ -121,12 +130,15 @@
                 if (urls && urls.length) {
                     urls.forEach(function (u2) {
                         u2 = u2.replace(/[.,;:!؟?)\]]+$/, "");
+                        // الرابط بيصير thumbUrl بس لو انحط صراحة بعد تسمية "صور للثامبنيل" (thumbLabelRe).
+                        // أي رابط إضافي (زي رابط الوكالة/المرجع) غير مصرَّح عنه هيك، منتجاهله بدل ما
+                        // نخمّن إنه صورة ثامبنيل وهو مش هيك — القاعدة الثابتة: ما منخمّن قيمة حقل.
                         if ("thumb" === mode) { if (!cur.thumbUrl) cur.thumbUrl = u2 }
-                        else if (!cur.url) cur.url = u2; else if (!cur.thumbUrl) cur.thumbUrl = u2
+                        else if (!cur.url) cur.url = u2
                     });
                     return
                 }
-                b(ln) // سطر وقت صريح (مدى قص) تحت خانة اللينك — أي شي تاني مش رابط ولا وقت، نتجاهله
+                !dateLikeRe.test(ln) && b(ln) // سطر وقت صريح (مدى قص) تحت خانة اللينك — أي شي تاني مش رابط ولا وقت ولا تاريخ، نتجاهله
             })
         }
 
@@ -145,13 +157,13 @@
             } else if ("src" === key) {
                 var parts = buf.map(function (ln) {
                     return ln.replace(mdLinkRe, "$1").replace(platformPrefix, "").replace(/\s+/g, " ").trim()
-                }).filter(function (ln) { return ln && !platformOnly.test(ln) });
+                }).filter(function (ln) { return ln && !platformOnly.test(ln) && !creditLabelOnlyRe.test(ln) });
                 v = parts.join(" ").trim();
                 if (v) cur.source = v
             } else if ("link" === key) {
                 parseLinkBlock(buf)
             } else if ("time" === key) {
-                buf.forEach(function (ln) { b(ln) })
+                buf.forEach(function (ln) { !dateLikeRe.test(ln) && b(ln) })
             } else if ("caption" === key) {
                 v = buf.join("\n").trim();
                 if (v) cur.caption = (cur.caption ? cur.caption + "\n" : "") + v
