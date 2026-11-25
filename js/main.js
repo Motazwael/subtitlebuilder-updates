@@ -4211,6 +4211,7 @@
                 file: "",
                 source: t.source || le(t.url) || "",
                 location: t.location || "",
+                date: t.date || "",
                 notes: t.notes || "",
                 // "الصوت من المصدر الأصلي" بالملاحظات = نضيف موقرت "AJ - Name Reporter" تلقائياً؛
                 // صندوق البطاقة بيخلي المحرر يفعّلها يدوياً لو نسي يكتبها بالسكربت.
@@ -4700,7 +4701,7 @@
                 var P = O.length ? w[I.results.indexOf(O[0])].c : t[0],
                     D = O.length ? O[O.length - 1] : null,
                     B = D ? D.start + D.dur : 0,
-                    F = ae(i("raw-date") && i("raw-date").value || "") || ue(),
+                    F = ae(P.date) || ae(i("raw-date") && i("raw-date").value || "") || ue(),
                     H = me(P.title, d("raw-mxt", 22)),
                     $ = me(P.subtitle, d("raw-mxs", 20)),
                     q = await xe(P.url),
@@ -4747,7 +4748,7 @@
                     Y = Math.max(1, d("raw-sw", 5)),
                     K = Math.max(1, Math.round(d("raw-xtrack", 18))),
                     Z = Math.max(1, Math.round(d("raw-dtrack", 17))),
-                    Q = ae(i("raw-date") && i("raw-date").value || "") || ue(),
+                    Q = ae(P.date) || ae(i("raw-date") && i("raw-date").value || "") || ue(),
                     tt = {},
                     et = 0,
                     nt = 0,
@@ -4783,8 +4784,9 @@
                                 o = me(n.title, d("raw-mxt", 22)),
                                 s = me(n.subtitle, d("raw-mxs", 20)),
                                 c = ae(n.location),
-                                l = sbFixHandleAt(ae(n.source) || le(n.url));
-                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], Q)), X && l && rt(Z, X, i, a, de(X, [], l))
+                                l = sbFixHandleAt(ae(n.source) || le(n.url)),
+                                dt = ae(n.date) || Q;
+                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && rt(K, W, i, a, de(W, [], dt)), X && l && rt(Z, X, i, a, de(X, [], l))
                         } else f("فيديو " + (e + 1) + ": " + (t.error || "فشل"), "e")
                     }), tt)
                     if (tt.hasOwnProperty(at)) {
@@ -4875,7 +4877,7 @@
                     sub: me(t.subtitle, d("raw-mxs", 20)),
                     loc: ae(t.location),
                     src: sbFixHandleAt(ae(t.source) || le(t.url)),
-                    date: ae(i("raw-date") && i("raw-date").value || "") || ue()
+                    date: ae(t.date) || ae(i("raw-date") && i("raw-date").value || "") || ue()
                 },
                 a = await m("sb_fillRaw", r);
             a && a.ok ? a.found ? (a.results || []).forEach(function(t) {

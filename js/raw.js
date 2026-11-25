@@ -36,7 +36,27 @@
         dateLikeRe = /تاريخ|\b(?:19|20)\d{2}\b/,
         // سطر "علامة الكاميرا" (أو شبيه) هو بس تسمية/label مش جزء من قيمة المصدر الفعلية —
         // زي platformOnly بالظبط، منتجاهله لحاله وما منضمّه لقيمة حقل "المصدر".
-        creditLabelOnlyRe = /^\s*(?:علامة\s*ال?كاميرا|كاميرا\s*(?:المصدر)?|camera\s*(?:tag|mark|credit)?)\s*[:：]?\s*$/i;
+        creditLabelOnlyRe = /^\s*(?:علامة\s*ال?كاميرا|كاميرا\s*(?:المصدر)?|camera\s*(?:tag|mark|credit)?)\s*[:：]?\s*$/i,
+        // تاريخ الواقعة بيتكتب عادةً بسطر واحد: "كتابة تاريخ الواقعة .. 20 - 11 - 2026" — العنوان
+        // والقيمة سوا بنفس السطر، والفاصل عندهم نقطتين ".." مش ":" أو "-" (يلي الحقول التانية
+        // بتستخدمها). بنلقطه كحالة خاصة قبل أي معالجة تانية — بدون ما نفتح/نسكر أي حقل عام — عشان
+        // الأسطر يلي بعده (مواقيت القص مثلاً) تضل تنحسب عادي لنفس الحقل يلي كان شغال قبله (اللينك).
+        dateInlineRe = /^(?:كتابة\s*)?تاريخ\s*(?:الواقعة|الحادث[ةه]|الحدث)?\s*(?:[:：=\-–—]|\.{2,}|…)\s*(\S.*)$/i,
+        arMonths = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
+    // "20 - 11 - 2026" أو "20/11/2026" (يوم-شهر-سنة، الأسلوب المعتاد بالتحرير العربي) → "20 نوفمبر 2026"
+    // متل شكل نفس التاريخ الجاهز اللي الأداة أصلاً بتحطه تلقائياً (ue() بملف main.js). أي صيغة تانية
+    // (تاريخ مكتوب نص عادي أصلاً) منسيبها متلما هي، ما منخمّن.
+    function formatDateLike(v) {
+        v = String(v || "").trim();
+        var m = /^(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})$/.exec(v);
+        if (m) {
+            var day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+            if (year < 100) year += 2000;
+            if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return day + " " + arMonths[month - 1] + " " + year
+        }
+        return v
+    }
 
     function u(e) {
         return String(e).replace(/^https?:\/\//i, "").split(/[\/?#]/)[0].replace(/^www\./, "").toLowerCase()
@@ -79,7 +99,7 @@
     }
 
     function blank() {
-        return { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "", ranges: [] }
+        return { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "", date: "", ranges: [] }
     }
 
     function p(e) {
@@ -202,6 +222,11 @@
             if (/^(?:-{3,}|_{3,}|={3,}|\*{3,})$/.test(raw)) { commitField(); flushRecord(); continue }
             if (/^(?:فيديو|مقطع|خام|Video|Clip|Raw)\s*\d+\s*[:：\-–]?\s*$/i.test(raw)) { commitField(); flushRecord(); continue }
 
+            // تاريخ الواقعة: حالة خاصة تُقرأ وتُحفظ مباشرة من نفس السطر، بدون ما تفتح/تسكر
+            // أي حقل عام — هيك أي سطر بعدها (مواقيت قص مثلاً) بضل يتحسب لنفس الحقل الشغال.
+            var dm = dateInlineRe.exec(raw);
+            if (dm) { if (!cur.date) cur.date = formatDateLike(dm[1].trim()); continue }
+
             var hdr = c(raw);
             if (hdr) { setField(hdr.key, hdr.val); continue }
 
@@ -225,9 +250,9 @@
         parse: p,
         parseOne: function (e) {
             var t = p(e),
-                i = { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "" };
+                i = { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "", date: "" };
             return t.forEach(function (e) {
-                ["title", "subtitle", "url", "thumbUrl", "source", "location", "notes", "caption"].forEach(function (t) {
+                ["title", "subtitle", "url", "thumbUrl", "source", "location", "notes", "caption", "date"].forEach(function (t) {
                     !i[t] && e[t] && (i[t] = e[t])
                 }), null == i.from && null != e.from && (i.from = e.from, i.to = e.to)
             }), m(i) ? [i] : []
