@@ -4786,7 +4786,7 @@
                                 c = ae(n.location),
                                 l = sbFixHandleAt(ae(n.source) || le(n.url)),
                                 dt = ae(n.date) || Q;
-                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), W && l && rt(K, W, i, a, de(W, [], l)), X && dt && rt(Z, X, i, a, de(X, [], dt))
+                            U && o.length && rt(v, U, r, i, de(U, o, "")), J && (s.length || c) && rt(v, J, i, a, de(J, s, c)), V && l && rt(K, V, r, i, de(V, [], l)), X && dt && rt(Z, X, i, a, de(X, [], dt))
                         } else f("فيديو " + (e + 1) + ": " + (t.error || "فشل"), "e")
                     }), tt)
                     if (tt.hasOwnProperty(at)) {

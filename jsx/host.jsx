@@ -942,10 +942,10 @@ function sb_fillRaw(spec) {
           if (key === 'title1') { want = spec.title; s0 = 0; s1 = spec.sw; }
           else if (key === 'title2') { want = spec.sub; s0 = spec.sw; }
           else if (key === 'src') { want = spec.src ? [spec.src] : null; s0 = 0; s1 = spec.sw; }
-          // ملاحظة: بالمكتبة الفعلية عند معتز، موقرت "Location Date" (key: loc) بيعرض اسم
-          // المصدر، وموقرت "Info Date" (key: date) هو يلي بيعرض التاريخ فعلياً — عكس ما كان
-          // بالكود قبل هيك (كانت القيمتين معكوسين).
-          else if (key === 'loc') { want = spec.src ? [spec.src] : null; s0 = spec.sw; }
+          // "Location Date" (key: loc) مش مستخدم حالياً عند معتز — ما منخمّن قيمة نحطها فيه،
+          // منسيبه دايماً فاضي (بيضل معطّل). "AJ - Source" (key: src بالأعلى) هو الموقرت
+          // المخصص فعلياً للمصدر. "Info Date" (key: date) هو يلي بيعرض التاريخ فعلياً.
+          else if (key === 'loc') { want = null; s0 = spec.sw; }
           else if (key === 'date') { want = spec.date ? [spec.date] : null; s0 = spec.sw; }
           var keepOff = (key === 'loc' || key === 'date' || key === 'src');
           if (!want || !want.length) {
