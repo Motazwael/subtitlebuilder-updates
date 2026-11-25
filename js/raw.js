@@ -99,7 +99,7 @@
     }
 
     function blank() {
-        return { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "", date: "", ranges: [] }
+        return { title: "", subtitle: "", url: "", thumbUrl: "", from: null, to: null, source: "", location: "", notes: "", caption: "", date: "", ranges: [], urls: [] }
     }
 
     function p(e) {
@@ -127,16 +127,18 @@
         function flushRecord() {
             if (m(cur)) {
                 var full = cur.ranges.filter(function (rr) { return null != rr[0] && null != rr[1] });
-                if (full.length > 1) full.forEach(function (rr) {
-                    var clone = {};
-                    for (var k in cur) if ("ranges" !== k) clone[k] = cur[k];
-                    clone.from = rr[0], clone.to = rr[1], records.push(clone)
-                });
-                else {
-                    var single = {};
-                    for (var k2 in cur) if ("ranges" !== k2) single[k2] = cur[k2];
-                    records.push(single)
-                }
+                var rangeList = full.length ? full : [[cur.from, cur.to]];
+                // أكتر من رابط فيديو حقيقي (مش ثامبنيل) تحت نفس السجل (نفس العنوان/المصدر/المكان):
+                // كل رابط بياخد كليب لحاله بنفس بقية الحقول، بدون أي فلسفة — تماماً متل ما لو
+                // المحرر كتبهم كسجلين منفصلين بـ"فيديو 1:"/"فيديو 2:".
+                var urlList = cur.urls.length > 1 ? cur.urls : [cur.url];
+                rangeList.forEach(function (rr) {
+                    urlList.forEach(function (u) {
+                        var clone = {};
+                        for (var k in cur) if ("ranges" !== k && "urls" !== k) clone[k] = cur[k];
+                        clone.url = u, clone.from = rr[0], clone.to = rr[1], records.push(clone)
+                    })
+                })
             }
             cur = blank(), field = null, buf = []
         }
@@ -154,7 +156,7 @@
                         // أي رابط إضافي (زي رابط الوكالة/المرجع) غير مصرَّح عنه هيك، منتجاهله بدل ما
                         // نخمّن إنه صورة ثامبنيل وهو مش هيك — القاعدة الثابتة: ما منخمّن قيمة حقل.
                         if ("thumb" === mode) { if (!cur.thumbUrl) cur.thumbUrl = u2 }
-                        else if (!cur.url) cur.url = u2
+                        else { cur.urls.push(u2); if (!cur.url) cur.url = u2 }
                     });
                     return
                 }
