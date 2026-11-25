@@ -960,6 +960,10 @@ function sb_fillRaw(spec) {
           // follows the video length automatically. This matters most with several clips/timecodes placed
           // back-to-back (spec.end is always the end of the LAST one, so the work area still spans all of them).
           var lines = want.length;
+          // لو الكليب كان متعطّل (disabled) من تجربة سابقة (مثلاً لما ما كان في تاريخ بوقتها)، وهلأ
+          // عنا محتوى حقيقي لازم يظهر، لازم نرجع نفعّله هون — الكود قبل هيك كان بس يطفي الكليب لما
+          // يكون فاضي، بس ما كان يرجع يفعّله لما يصير عنده محتوى، فكان يضل معطّل حتى بعد ما ينكتب فيه النص الصح.
+          try { ti.disabled = false; } catch (eEn) {}
           if (key === 'src' && spec.icon != null && spec.icon >= 0) { try { r.icon = _sbSetIcon(ti, spec.icon); } catch (ei) { r.icon = 'icon: ' + ei; } }
           // موقرت "Info Date" (وكمان "Location Date") عندهم قائمة "الأيقونة" المشتركة Location/Date/Source،
           // وبتضل محتفظة بآخر قيمة تم اختيارها فيها يدوياً من قبل (أحياناً بتكون واقفة على Location أو Source
