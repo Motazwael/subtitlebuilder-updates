@@ -3764,9 +3764,12 @@
     }
     // for title/subtitle text only: collapse whitespace and trim stray punctuation from the EDGES only —
     // unlike ae(), this keeps punctuation written on purpose inside the sentence (e.g. "لم تنفجر.. مسيرة")
-    // instead of stripping every "." "," "،" "؛" ";" ":" wherever it appears.
+    // instead of stripping every "." "," "،" "؛" ";" wherever it appears.
+    // ملاحظة: ":" مستثناة من هاي القائمة قصداً — عناوين كتير بتنتهي بنقطتين فوق بعض قصداً (مثلاً
+    // "الوزير فلان:" قبل ما يجي الاقتباس بالعنوان الفرعي)، فكانت هاي الدالة عم تمسحها باعتبارها
+    // علامة ترقيم زايدة بآخر السطر، بينما هي فعلياً جزء مقصود من صياغة العنوان.
     function teClean(t) {
-        return String(t || "").replace(/\s+/g, " ").replace(/^[.,،؛;:\s]+|[.,،؛;:\s]+$/g, "").trim()
+        return String(t || "").replace(/\s+/g, " ").replace(/^[.,،؛;\s]+|[.,،؛;\s]+$/g, "").trim()
     }
 
     function ie(t) {
